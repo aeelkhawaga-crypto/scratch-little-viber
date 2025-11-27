@@ -738,6 +738,25 @@ const myBlocks = function (isInitialSetup, isStage, targetId, colors) {
 };
 /* eslint-enable no-unused-vars */
 
+const vibeCoding = function (isInitialSetup, isStage, targetId, colors) {
+    // Note: the category's secondaryColour matches up with the blocks' tertiary color, both used for border color.
+    const makeABlock = ScratchBlocks.ScratchMsgs.translate('NEW_CODE_CHANGE', 'Ask AI');
+    const exportBlocksJson = ScratchBlocks.ScratchMsgs.translate('VIBE_EXPORT_BLOCKS_JSON', 'Get Blocks JSON');
+    return `
+    <category
+        name="Vibe Coding"
+        id="vibeCoding"
+        colour="${colors.primary}"
+        secondaryColour="${colors.vibe}">
+        <button text="${makeABlock}" callbackKey="OPEN_VIBE_AI_MODAL"></button>
+        ${blockSeparator}
+        <button text="${exportBlocksJson}" callbackKey="GET_BLOCKS_JSON"></button>
+        ${blockSeparator}
+    </category>
+    `;
+};
+
+
 const xmlOpen = '<xml style="display: none">';
 const xmlClose = '</xml>';
 
@@ -786,6 +805,7 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
     const operatorsXML = moveCategory('operators') || operators(isInitialSetup, isStage, targetId, colors.operators);
     const variablesXML = moveCategory('data') || variables(isInitialSetup, isStage, targetId, colors.data);
     const myBlocksXML = moveCategory('procedures') || myBlocks(isInitialSetup, isStage, targetId, colors.more);
+    const vibeCodingXML = moveCategory('vibeCoding') || vibeCoding(isInitialSetup, isStage, targetId, colors.vibe);
 
     const everything = [
         xmlOpen,
@@ -797,7 +817,8 @@ const makeToolboxXML = function (isInitialSetup, isStage = true, targetId, categ
         sensingXML, gap,
         operatorsXML, gap,
         variablesXML, gap,
-        myBlocksXML
+        myBlocksXML, gap,
+        vibeCodingXML
     ];
 
     for (const extensionCategory of categoriesXML) {

@@ -67,6 +67,12 @@ const blockColors = {
         tertiary: '#FF3355',
         quaternary: '#FF3355'
     },
+    vibe: {
+        primary: '#506680',
+        secondary: '#504D6A',
+        tertiary: '#503355',
+        quaternary: '#503355'
+    },
     text: '#FFFFFF',
     workspace: '#F9F9F9',
     toolboxHover: '#4C97FF',

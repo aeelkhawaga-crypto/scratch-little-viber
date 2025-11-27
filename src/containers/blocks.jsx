@@ -10,6 +10,7 @@ import VM from 'scratch-vm';
 import log from '../lib/log.js';
 import Prompt from './prompt.jsx';
 import BlocksComponent from '../components/blocks/blocks.jsx';
+import VibeAiModal from '../components/vibe-ai-modal/vibe-ai-modal.jsx';
 import ExtensionLibrary from './extension-library.jsx';
 import extensionData from '../lib/libraries/extensions/index.jsx';
 import CustomProcedures from './custom-procedures.jsx';
@@ -76,6 +77,12 @@ class Blocks extends React.Component {
             'onVisualReport',
             'onWorkspaceUpdate',
             'onWorkspaceMetricsChange',
+            'logWorkspaceBlocksToConsole',
+            'handleVibeAiXmlChange',
+            'handleVibeAiTestPaste',
+            'handleVibeAiInsert',
+            'openVibeAiModal',
+            'closeVibeAiModal',
             'setBlocks',
             'setLocale'
         ]);
@@ -83,8 +90,11 @@ class Blocks extends React.Component {
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
         this.ScratchBlocks.recordSoundCallback = this.handleOpenSoundRecorder;
 
+        this.ignoreNextWorkspaceUpdate = false;
         this.state = {
-            prompt: null
+            prompt: null,
+            vibeAiModalOpen: false,
+            vibeAiXmlText: ''
         };
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.toolboxUpdateQueue = [];
@@ -116,10 +126,14 @@ class Blocks extends React.Component {
         const procButtonCallback = () => {
             this.ScratchBlocks.Procedures.createProcedureDefCallback_(this.workspace);
         };
+        const exportBlocksJsonCallback = () => this.logWorkspaceBlocksToConsole();
+        const openVibeAiModalCallback = () => this.openVibeAiModal();
 
         toolboxWorkspace.registerButtonCallback('MAKE_A_VARIABLE', varListButtonCallback(''));
         toolboxWorkspace.registerButtonCallback('MAKE_A_LIST', varListButtonCallback('list'));
         toolboxWorkspace.registerButtonCallback('MAKE_A_PROCEDURE', procButtonCallback);
+        toolboxWorkspace.registerButtonCallback('GET_BLOCKS_JSON', exportBlocksJsonCallback);
+        toolboxWorkspace.registerButtonCallback('OPEN_VIBE_AI_MODAL', openVibeAiModalCallback);
 
         // Store the xml of the toolbox that is actually rendered.
         // This is used in componentDidUpdate instead of prevProps, because
@@ -148,6 +162,8 @@ class Blocks extends React.Component {
     shouldComponentUpdate (nextProps, nextState) {
         return (
             this.state.prompt !== nextState.prompt ||
+            this.state.vibeAiModalOpen !== nextState.vibeAiModalOpen ||
+            this.state.vibeAiXmlText !== nextState.vibeAiXmlText ||
             this.props.isVisible !== nextProps.isVisible ||
             this._renderedToolboxXML !== nextProps.toolboxXML ||
             this.props.extensionLibraryVisible !== nextProps.extensionLibraryVisible ||
@@ -370,6 +386,10 @@ class Blocks extends React.Component {
         }
     }
     onWorkspaceUpdate (data) {
+        if (this.ignoreNextWorkspaceUpdate) {
+            this.ignoreNextWorkspaceUpdate = false;
+            return;
+        }
         // When we change sprites, update the toolbox to have the new sprite's blocks
         const toolboxXML = this.getToolboxXML();
         if (toolboxXML) {
@@ -544,6 +564,105 @@ class Blocks extends React.Component {
                 this.updateToolbox(); // To show new variables/custom blocks
             });
     }
+    openVibeAiModal () {
+        const vibeAiXmlText = this.getWorkspaceXmlText();
+        this.setState({vibeAiModalOpen: true, vibeAiXmlText});
+    }
+    closeVibeAiModal () {
+        this.setState({vibeAiModalOpen: false});
+    }
+    handleVibeAiXmlChange (event) {
+        this.setState({vibeAiXmlText: event.target.value});
+    }
+    handleVibeAiTestPaste () {
+        this.setState({vibeAiXmlText: this.getVibeAiTestXml()});
+    }
+    handleVibeAiInsert () {
+        if (!this.workspace || !this.ScratchBlocks || !this.ScratchBlocks.Xml) {
+            log.warn('Workspace not ready to insert XML.');
+            return;
+        }
+        const xmlText = this.state.vibeAiXmlText || '<xml></xml>';
+        let dom;
+        try {
+            dom = this.ScratchBlocks.Xml.textToDom(xmlText);
+        } catch (e) {
+            log.warn('Invalid XML, cannot insert into workspace', e);
+            return;
+        }
+        try {
+            this.ignoreNextWorkspaceUpdate = true;
+            this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
+            // Block events from loading the XML should flow to the VM via blockListener.
+            this.props.vm.refreshWorkspace();
+            this.updateToolbox();
+            // Normalize and reflect the current workspace XML back into the modal.
+            this.setState({vibeAiXmlText: this.getWorkspaceXmlText()});
+            this.closeVibeAiModal();
+        } catch (e) {
+            log.warn('Failed to insert XML into workspace', e);
+        }
+    }
+    getWorkspaceXmlText () {
+        if (!this.workspace || !this.ScratchBlocks || !this.ScratchBlocks.Xml) {
+            return '<xml></xml>';
+        }
+        try {
+            const xmlDom = this.ScratchBlocks.Xml.workspaceToDom(this.workspace);
+            return this.ScratchBlocks.Xml.domToPrettyText(xmlDom);
+        } catch (e) {
+            log.warn('Could not serialize workspace to XML', e);
+            return '<xml></xml>';
+        }
+    }
+    getVibeAiTestXml () {
+        return `<xml xmlns="http://www.w3.org/1999/xhtml">
+  <variables>
+    <variable type="" id="\`jEk@4|i[#Fk?(8x)AV.-my variable" islocal="false" iscloud="false">my variable</variable>
+  </variables>
+  <block type="event_whenflagclicked" id=",#ToAPe{Vmsp8=wcLaAi" x="326" y="121">
+    <next>
+      <block type="control_forever" id="nFzHz{!mALna99mpJBmy">
+        <statement name="SUBSTACK">
+          <block type="motion_movesteps" id="d5F.VAAfwJnyxb3sRup0">
+            <value name="STEPS">
+              <shadow type="math_number" id="kzS49N)~ZyG5NXX#W!,Q">
+                <field name="NUM">10</field>
+              </shadow>
+            </value>
+            <next>
+              <block type="looks_sayforsecs" id="qTV/Eaed.igtTTsFe|\`E">
+                <value name="MESSAGE">
+                  <shadow type="text" id="GSG,-(P6~gd%RXev{Ll2">
+                    <field name="TEXT">Hello!</field>
+                  </shadow>
+                </value>
+                <value name="SECS">
+                  <shadow type="math_number" id="Pg5UiX|3]P[\`hez,,@5S">
+                    <field name="NUM">2</field>
+                  </shadow>
+                </value>
+                <next>
+                  <block type="motion_ifonedgebounce" id="$hv@[ufPG}@Z:)~5.ni["></block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </statement>
+      </block>
+    </next>
+  </block>
+</xml>`;
+    }
+    logWorkspaceBlocksToConsole () {
+        if (!this.workspace || !this.ScratchBlocks || !this.ScratchBlocks.Xml) {
+            log.warn('Workspace not ready to export blocks to JSON.');
+            return;
+        }
+        const xml = this.ScratchBlocks.Xml.workspaceToDom(this.workspace);
+        // eslint-disable-next-line no-console
+        console.log('Workspace blocks JSON object:', xml);
+    }
     render () {
         /* eslint-disable no-unused-vars */
         const {
@@ -604,6 +723,15 @@ class Blocks extends React.Component {
                             media: options.media
                         }}
                         onRequestClose={this.handleCustomProceduresClose}
+                    />
+                ) : null}
+                {this.state.vibeAiModalOpen ? (
+                    <VibeAiModal
+                        xmlText={this.state.vibeAiXmlText}
+                        onXmlChange={this.handleVibeAiXmlChange}
+                        onTest={this.handleVibeAiTestPaste}
+                        onInsert={this.handleVibeAiInsert}
+                        onCancel={this.closeVibeAiModal}
                     />
                 ) : null}
             </React.Fragment>
