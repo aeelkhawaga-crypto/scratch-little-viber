@@ -740,17 +740,17 @@ const myBlocks = function (isInitialSetup, isStage, targetId, colors) {
 
 const vibeCoding = function (isInitialSetup, isStage, targetId, colors) {
     // Note: the category's secondaryColour matches up with the blocks' tertiary color, both used for border color.
-    const makeABlock = ScratchBlocks.ScratchMsgs.translate('NEW_CODE_CHANGE', 'Ask AI');
+    const makeABlock = ScratchBlocks.ScratchMsgs.translate('NEW_CODE_CHANGE', 'Do Magic');
     const exportBlocksJson = ScratchBlocks.ScratchMsgs.translate('VIBE_EXPORT_BLOCKS_JSON', 'Get Blocks JSON');
+    // <button text="${exportBlocksJson}" callbackKey="GET_BLOCKS_JSON"></button>
+    //     ${blockSeparator}
     return `
     <category
-        name="Vibe Coding"
+        name="Little Viber"
         id="vibeCoding"
         colour="${colors.primary}"
         secondaryColour="${colors.vibe}">
         <button text="${makeABlock}" callbackKey="OPEN_VIBE_AI_MODAL"></button>
-        ${blockSeparator}
-        <button text="${exportBlocksJson}" callbackKey="GET_BLOCKS_JSON"></button>
         ${blockSeparator}
     </category>
     `;

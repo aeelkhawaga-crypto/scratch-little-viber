@@ -15,22 +15,22 @@ import ExtensionLibrary from './extension-library.jsx';
 import extensionData from '../lib/libraries/extensions/index.jsx';
 import CustomProcedures from './custom-procedures.jsx';
 import errorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
-import {BLOCKS_DEFAULT_SCALE, STAGE_DISPLAY_SIZES} from '../lib/layout-constants';
+import { generateVibeXml } from '../lib/vibeAiService';
+import { BLOCKS_DEFAULT_SCALE, STAGE_DISPLAY_SIZES } from '../lib/layout-constants';
 import DropAreaHOC from '../lib/drop-area-hoc.jsx';
 import DragConstants from '../lib/drag-constants';
 import defineDynamicBlock from '../lib/define-dynamic-block';
-import {DEFAULT_THEME, getColorsForTheme, themeMap} from '../lib/themes';
-import {injectExtensionBlockTheme, injectExtensionCategoryTheme} from '../lib/themes/blockHelpers';
+import { DEFAULT_THEME, getColorsForTheme, themeMap } from '../lib/themes';
+import { injectExtensionBlockTheme, injectExtensionCategoryTheme } from '../lib/themes/blockHelpers';
 
-import {connect} from 'react-redux';
-import {updateToolbox} from '../reducers/toolbox';
-import {activateColorPicker} from '../reducers/color-picker';
-import {closeExtensionLibrary, openSoundRecorder, openConnectionModal} from '../reducers/modals';
-import {activateCustomProcedures, deactivateCustomProcedures} from '../reducers/custom-procedures';
-import {setConnectionModalExtensionId} from '../reducers/connection-modal';
-import {updateMetrics} from '../reducers/workspace-metrics';
-import {isTimeTravel2020} from '../reducers/time-travel';
-
+import { connect } from 'react-redux';
+import { updateToolbox } from '../reducers/toolbox';
+import { activateColorPicker } from '../reducers/color-picker';
+import { closeExtensionLibrary, openSoundRecorder, openConnectionModal } from '../reducers/modals';
+import { activateCustomProcedures, deactivateCustomProcedures } from '../reducers/custom-procedures';
+import { setConnectionModalExtensionId } from '../reducers/connection-modal';
+import { updateMetrics } from '../reducers/workspace-metrics';
+import { isTimeTravel2020 } from '../reducers/time-travel';
 import {
     activateTab,
     SOUNDS_TAB_INDEX
@@ -50,7 +50,7 @@ const DroppableBlocks = DropAreaHOC([
 ])(BlocksComponent);
 
 class Blocks extends React.Component {
-    constructor (props) {
+    constructor(props) {
         super(props);
         this.ScratchBlocks = VMScratchBlocks(props.vm, false);
         bindAll(this, [
@@ -81,6 +81,8 @@ class Blocks extends React.Component {
             'handleVibeAiXmlChange',
             'handleVibeAiTestPaste',
             'handleVibeAiInsert',
+            'handleVibeAiPromptChange',
+            'handleVibeAiGenerate',
             'openVibeAiModal',
             'closeVibeAiModal',
             'setBlocks',
@@ -89,17 +91,19 @@ class Blocks extends React.Component {
         this.ScratchBlocks.prompt = this.handlePromptStart;
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
         this.ScratchBlocks.recordSoundCallback = this.handleOpenSoundRecorder;
-
         this.ignoreNextWorkspaceUpdate = false;
         this.state = {
             prompt: null,
             vibeAiModalOpen: false,
-            vibeAiXmlText: ''
+            vibeAiXmlText: '',
+            vibeAiPrompt: 'Make the cat move 10 steos when the green flag is clicked.',
+            vibeAiError: '',
+            vibeAiLoading: false
         };
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.toolboxUpdateQueue = [];
     }
-    componentDidMount () {
+    componentDidMount() {
         this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
         this.ScratchBlocks.prompt = this.handlePromptStart;
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
@@ -112,7 +116,7 @@ class Blocks extends React.Component {
         const workspaceConfig = defaultsDeep({},
             Blocks.defaultOptions,
             this.props.options,
-            {rtl: this.props.isRtl, toolbox: this.props.toolboxXML, colours: getColorsForTheme(this.props.theme)}
+            { rtl: this.props.isRtl, toolbox: this.props.toolboxXML, colours: getColorsForTheme(this.props.theme) }
         );
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
 
@@ -159,11 +163,14 @@ class Blocks extends React.Component {
             this.setLocale();
         }
     }
-    shouldComponentUpdate (nextProps, nextState) {
+    shouldComponentUpdate(nextProps, nextState) {
         return (
             this.state.prompt !== nextState.prompt ||
             this.state.vibeAiModalOpen !== nextState.vibeAiModalOpen ||
             this.state.vibeAiXmlText !== nextState.vibeAiXmlText ||
+            this.state.vibeAiPrompt !== nextState.vibeAiPrompt ||
+            this.state.vibeAiError !== nextState.vibeAiError ||
+            this.state.vibeAiLoading !== nextState.vibeAiLoading ||
             this.props.isVisible !== nextProps.isVisible ||
             this._renderedToolboxXML !== nextProps.toolboxXML ||
             this.props.extensionLibraryVisible !== nextProps.extensionLibraryVisible ||
@@ -173,7 +180,7 @@ class Blocks extends React.Component {
             this.props.stageSize !== nextProps.stageSize
         );
     }
-    componentDidUpdate (prevProps) {
+    componentDidUpdate(prevProps) {
         // If any modals are open, call hideChaff to close z-indexed field editors
         if (this.props.anyModalVisible && !prevProps.anyModalVisible) {
             this.ScratchBlocks.hideChaff();
@@ -211,7 +218,7 @@ class Blocks extends React.Component {
             this.workspace.setVisible(false);
         }
     }
-    componentWillUnmount () {
+    componentWillUnmount() {
         this.detachVM();
         this.workspace.dispose();
         clearTimeout(this.toolboxUpdateTimeout);
@@ -219,13 +226,13 @@ class Blocks extends React.Component {
         // Clear the flyout blocks so that they can be recreated on mount.
         this.props.vm.clearFlyoutBlocks();
     }
-    requestToolboxUpdate () {
+    requestToolboxUpdate() {
         clearTimeout(this.toolboxUpdateTimeout);
         this.toolboxUpdateTimeout = setTimeout(() => {
             this.updateToolbox();
         }, 0);
     }
-    setLocale () {
+    setLocale() {
         this.ScratchBlocks.ScratchMsgs.setLocale(this.props.locale);
         this.props.vm.setLocale(this.props.locale, this.props.messages)
             .then(() => {
@@ -238,7 +245,7 @@ class Blocks extends React.Component {
             });
     }
 
-    updateToolbox () {
+    updateToolbox() {
         this.toolboxUpdateTimeout = false;
 
         const categoryId = this.workspace.toolbox_.getSelectedCategoryId();
@@ -264,7 +271,7 @@ class Blocks extends React.Component {
         queue.forEach(fn => fn());
     }
 
-    withToolboxUpdates (fn) {
+    withToolboxUpdates(fn) {
         // if there is a queued toolbox update, we need to wait
         if (this.toolboxUpdateTimeout) {
             this.toolboxUpdateQueue.push(fn);
@@ -273,7 +280,7 @@ class Blocks extends React.Component {
         }
     }
 
-    attachVM () {
+    attachVM() {
         this.workspace.addChangeListener(this.props.vm.blockListener);
         this.flyoutWorkspace = this.workspace
             .getFlyout()
@@ -293,7 +300,7 @@ class Blocks extends React.Component {
         this.props.vm.addListener('PERIPHERAL_CONNECTED', this.handleStatusButtonUpdate);
         this.props.vm.addListener('PERIPHERAL_DISCONNECTED', this.handleStatusButtonUpdate);
     }
-    detachVM () {
+    detachVM() {
         this.props.vm.removeListener('SCRIPT_GLOW_ON', this.onScriptGlowOn);
         this.props.vm.removeListener('SCRIPT_GLOW_OFF', this.onScriptGlowOff);
         this.props.vm.removeListener('BLOCK_GLOW_ON', this.onBlockGlowOn);
@@ -308,7 +315,7 @@ class Blocks extends React.Component {
         this.props.vm.removeListener('PERIPHERAL_DISCONNECTED', this.handleStatusButtonUpdate);
     }
 
-    updateToolboxBlockValue (id, value) {
+    updateToolboxBlockValue(id, value) {
         this.withToolboxUpdates(() => {
             const block = this.workspace
                 .getFlyout()
@@ -320,7 +327,7 @@ class Blocks extends React.Component {
         });
     }
 
-    onTargetsUpdate () {
+    onTargetsUpdate() {
         if (this.props.vm.editingTarget && this.workspace.getFlyout()) {
             ['glide', 'move', 'set'].forEach(prefix => {
                 this.updateToolboxBlockValue(`${prefix}x`, Math.round(this.props.vm.editingTarget.x).toString());
@@ -328,7 +335,7 @@ class Blocks extends React.Component {
             });
         }
     }
-    onWorkspaceMetricsChange () {
+    onWorkspaceMetricsChange() {
         const target = this.props.vm.editingTarget;
         if (target && target.id) {
             // Dispatch updateMetrics later, since onWorkspaceMetricsChange may be (very indirectly)
@@ -344,27 +351,27 @@ class Blocks extends React.Component {
             }, 0);
         }
     }
-    onScriptGlowOn (data) {
+    onScriptGlowOn(data) {
         this.workspace.glowStack(data.id, true);
     }
-    onScriptGlowOff (data) {
+    onScriptGlowOff(data) {
         this.workspace.glowStack(data.id, false);
     }
-    onBlockGlowOn (data) {
+    onBlockGlowOn(data) {
         this.workspace.glowBlock(data.id, true);
     }
-    onBlockGlowOff (data) {
+    onBlockGlowOff(data) {
         this.workspace.glowBlock(data.id, false);
     }
-    onVisualReport (data) {
+    onVisualReport(data) {
         this.workspace.reportValue(data.id, data.value);
     }
-    getToolboxXML () {
+    getToolboxXML() {
         // Use try/catch because this requires digging pretty deep into the VM
         // Code inside intentionally ignores several error situations (no stage, etc.)
         // Because they would get caught by this try/catch
         try {
-            let {editingTarget: target, runtime} = this.props.vm;
+            let { editingTarget: target, runtime } = this.props.vm;
             const stage = runtime.getTargetForStage();
             if (!target) target = stage; // If no editingTarget, use the stage
 
@@ -385,7 +392,7 @@ class Blocks extends React.Component {
             return null;
         }
     }
-    onWorkspaceUpdate (data) {
+    onWorkspaceUpdate(data) {
         if (this.ignoreNextWorkspaceUpdate) {
             this.ignoreNextWorkspaceUpdate = false;
             return;
@@ -423,7 +430,7 @@ class Blocks extends React.Component {
         this.workspace.addChangeListener(this.props.vm.blockListener);
 
         if (this.props.vm.editingTarget && this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id]) {
-            const {scrollX, scrollY, scale} = this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id];
+            const { scrollX, scrollY, scale } = this.props.workspaceMetrics.targets[this.props.vm.editingTarget.id];
             this.workspace.scrollX = scrollX;
             this.workspace.scrollY = scrollY;
             this.workspace.scale = scale;
@@ -435,7 +442,7 @@ class Blocks extends React.Component {
         // workspace to be 'undone' here.
         this.workspace.clearUndo();
     }
-    handleMonitorsUpdate (monitors) {
+    handleMonitorsUpdate(monitors) {
         // Update the checkboxes of the relevant monitors.
         // TODO: What about monitors that have fields? See todo in scratch-vm blocks.js changeBlock:
         // https://github.com/LLK/scratch-vm/blob/2373f9483edaf705f11d62662f7bb2a57fbb5e28/src/engine/blocks.js#L569-L576
@@ -453,7 +460,7 @@ class Blocks extends React.Component {
             }
         }
     }
-    handleExtensionAdded (categoryInfo) {
+    handleExtensionAdded(categoryInfo) {
         const defineBlocks = blockInfoArray => {
             if (blockInfoArray && blockInfoArray.length > 0) {
                 const staticBlocksJson = [];
@@ -494,11 +501,11 @@ class Blocks extends React.Component {
             this.props.updateToolboxState(toolboxXML);
         }
     }
-    handleBlocksInfoUpdate (categoryInfo) {
+    handleBlocksInfoUpdate(categoryInfo) {
         // @todo Later we should replace this to avoid all the warnings from redefining blocks.
         this.handleExtensionAdded(categoryInfo);
     }
-    handleCategorySelected (categoryId) {
+    handleCategorySelected(categoryId) {
         const extension = extensionData.find(ext => ext.extensionId === categoryId);
         if (extension && extension.launchPeripheralConnectionFlow) {
             this.handleConnectionModalStart(categoryId);
@@ -508,11 +515,11 @@ class Blocks extends React.Component {
             this.workspace.toolbox_.setSelectedCategoryById(categoryId);
         });
     }
-    setBlocks (blocks) {
+    setBlocks(blocks) {
         this.blocks = blocks;
     }
-    handlePromptStart (message, defaultValue, callback, optTitle, optVarType) {
-        const p = {prompt: {callback, message, defaultValue}};
+    handlePromptStart(message, defaultValue, callback, optTitle, optVarType) {
+        const p = { prompt: { callback, message, defaultValue } };
         p.prompt.title = optTitle ? optTitle :
             this.ScratchBlocks.Msg.VARIABLE_MODAL_TITLE;
         p.prompt.varType = typeof optVarType === 'string' ?
@@ -524,13 +531,13 @@ class Blocks extends React.Component {
         p.prompt.showCloudOption = (optVarType === this.ScratchBlocks.SCALAR_VARIABLE_TYPE) && this.props.canUseCloud;
         this.setState(p);
     }
-    handleConnectionModalStart (extensionId) {
+    handleConnectionModalStart(extensionId) {
         this.props.onOpenConnectionModal(extensionId);
     }
-    handleStatusButtonUpdate () {
+    handleStatusButtonUpdate() {
         this.ScratchBlocks.refreshStatusButtons(this.workspace);
     }
-    handleOpenSoundRecorder () {
+    handleOpenSoundRecorder() {
         this.props.onOpenSoundRecorder();
     }
 
@@ -539,23 +546,23 @@ class Blocks extends React.Component {
      * and additional potentially conflicting variable names from the VM
      * to the variable validation prompt callback used in scratch-blocks.
      */
-    handlePromptCallback (input, variableOptions) {
+    handlePromptCallback(input, variableOptions) {
         this.state.prompt.callback(
             input,
             this.props.vm.runtime.getAllVarNamesOfType(this.state.prompt.varType),
             variableOptions);
         this.handlePromptClose();
     }
-    handlePromptClose () {
-        this.setState({prompt: null});
+    handlePromptClose() {
+        this.setState({ prompt: null });
     }
-    handleCustomProceduresClose (data) {
+    handleCustomProceduresClose(data) {
         this.props.onRequestCloseCustomProcedures(data);
         const ws = this.workspace;
         ws.refreshToolboxSelection_();
         ws.toolbox_.scrollToCategoryById('myBlocks');
     }
-    handleDrop (dragInfo) {
+    handleDrop(dragInfo) {
         fetch(dragInfo.payload.bodyUrl)
             .then(response => response.json())
             .then(blocks => this.props.vm.shareBlocksToTarget(blocks, this.props.vm.editingTarget.id))
@@ -564,20 +571,65 @@ class Blocks extends React.Component {
                 this.updateToolbox(); // To show new variables/custom blocks
             });
     }
-    openVibeAiModal () {
+    openVibeAiModal() {
         const vibeAiXmlText = this.getWorkspaceXmlText();
-        this.setState({vibeAiModalOpen: true, vibeAiXmlText});
+        this.setState({
+            vibeAiModalOpen: true,
+            vibeAiXmlText,
+            vibeAiPrompt: '',
+            vibeAiError: '',
+            vibeAiLoading: false
+        });
     }
-    closeVibeAiModal () {
-        this.setState({vibeAiModalOpen: false});
+    closeVibeAiModal() {
+        this.setState({ vibeAiModalOpen: false });
     }
-    handleVibeAiXmlChange (event) {
-        this.setState({vibeAiXmlText: event.target.value});
+    handleVibeAiXmlChange(event) {
+        this.setState({ vibeAiXmlText: event.target.value });
     }
-    handleVibeAiTestPaste () {
-        this.setState({vibeAiXmlText: this.getVibeAiTestXml()});
+    handleVibeAiTestPaste() {
+        this.setState({ vibeAiXmlText: this.getVibeAiTestXml() });
     }
-    handleVibeAiInsert () {
+    handleVibeAiPromptChange(event) {
+        this.setState({ vibeAiPrompt: event.target.value });
+    }
+    sanitizeAiContent(content) {
+        if (!content) return '';
+        let cleaned = content.trim();
+        // If wrapped in a code fence (with or without a language), strip it.
+        const fencedMatch = cleaned.match(/^```[^\n]*\n([\s\S]*?)```$/);
+        if (fencedMatch && fencedMatch[1]) {
+            cleaned = fencedMatch[1].trim();
+        } else {
+            cleaned = cleaned
+                .replace(/^```[^\n]*\n?/, '') // leading fence
+                .replace(/```$/, '') // trailing fence
+                .trim();
+        }
+        return cleaned;
+    }
+    async handleVibeAiGenerate() {
+        const prompt = (this.state.vibeAiPrompt || '').trim();
+        const xmlText = this.state.vibeAiXmlText || this.getWorkspaceXmlText();
+        if (!prompt) {
+            this.setState({ vibeAiError: 'Please enter a prompt.' });
+            return;
+        }
+        this.setState({ vibeAiError: '', vibeAiLoading: true });
+        try {
+            const aiResponse = await generateVibeXml({
+                prompt,
+                currentXml: xmlText
+            });
+            this.setState({ vibeAiXmlText: this.sanitizeAiContent(aiResponse) });
+        } catch (err) {
+            this.setState({ vibeAiError: err.message || 'Failed to generate code.' });
+        } finally {
+            this.setState({ vibeAiLoading: false });
+            console.log('Vibe AI generation complete.');
+        }
+    }
+    handleVibeAiInsert() {
         if (!this.workspace || !this.ScratchBlocks || !this.ScratchBlocks.Xml) {
             log.warn('Workspace not ready to insert XML.');
             return;
@@ -590,20 +642,24 @@ class Blocks extends React.Component {
             log.warn('Invalid XML, cannot insert into workspace', e);
             return;
         }
+        // Remove the VM listener while we reload to avoid emitting change events
+        // for every inserted block, then reattach afterward.
+        // this.workspace.removeChangeListener(this.props.vm.blockListener);
         try {
             this.ignoreNextWorkspaceUpdate = true;
             this.ScratchBlocks.Xml.clearWorkspaceAndLoadFromXml(dom, this.workspace);
-            // Block events from loading the XML should flow to the VM via blockListener.
+            // this.workspace.addChangeListener(this.props.vm.blockListener);
             this.props.vm.refreshWorkspace();
             this.updateToolbox();
             // Normalize and reflect the current workspace XML back into the modal.
-            this.setState({vibeAiXmlText: this.getWorkspaceXmlText()});
+            this.setState({ vibeAiXmlText: this.getWorkspaceXmlText() });
             this.closeVibeAiModal();
         } catch (e) {
             log.warn('Failed to insert XML into workspace', e);
+            // this.workspace.addChangeListener(this.props.vm.blockListener);
         }
     }
-    getWorkspaceXmlText () {
+    getWorkspaceXmlText() {
         if (!this.workspace || !this.ScratchBlocks || !this.ScratchBlocks.Xml) {
             return '<xml></xml>';
         }
@@ -615,46 +671,67 @@ class Blocks extends React.Component {
             return '<xml></xml>';
         }
     }
-    getVibeAiTestXml () {
+    getVibeAiTestXml() {
         return `<xml xmlns="http://www.w3.org/1999/xhtml">
   <variables>
-    <variable type="" id="\`jEk@4|i[#Fk?(8x)AV.-my variable" islocal="false" iscloud="false">my variable</variable>
+    <variable type="" id="\`jEk@4|i[#Fk?(8x)AV.-my variable" islocal="false" iscloud="false">my2 variable</variable>
   </variables>
-  <block type="event_whenflagclicked" id=",#ToAPe{Vmsp8=wcLaAi" x="326" y="121">
+  <block type="event_whenflagclicked" id="dFD#}*4i8L?!kd)V$ir!" x="349" y="156">
     <next>
-      <block type="control_forever" id="nFzHz{!mALna99mpJBmy">
-        <statement name="SUBSTACK">
-          <block type="motion_movesteps" id="d5F.VAAfwJnyxb3sRup0">
-            <value name="STEPS">
-              <shadow type="math_number" id="kzS49N)~ZyG5NXX#W!,Q">
-                <field name="NUM">10</field>
+      <block type="looks_show" id="_7R1jy9*kj5#4y7q1.0C">
+        <next>
+          <block type="motion_gotoxy" id="6ixAe_JWJEY;A5*k+O@1">
+            <value name="X">
+              <shadow type="math_number" id="1}(9ncAOtlSGHn/F{]hO">
+                <field name="NUM">-216</field>
+              </shadow>
+            </value>
+            <value name="Y">
+              <shadow type="math_number" id="s:W}3{VPi?Z^C3hgeqS~">
+                <field name="NUM">-135</field>
               </shadow>
             </value>
             <next>
-              <block type="looks_sayforsecs" id="qTV/Eaed.igtTTsFe|\`E">
-                <value name="MESSAGE">
-                  <shadow type="text" id="GSG,-(P6~gd%RXev{Ll2">
-                    <field name="TEXT">Hello!</field>
+              <block type="control_repeat" id="zXw4ddJTUzo_@zjr\`XxI">
+                <value name="TIMES">
+                  <shadow type="math_whole_number" id="Y}=M*c\`:(.^a)9RKy%-4">
+                    <field name="NUM">33</field>
                   </shadow>
                 </value>
-                <value name="SECS">
-                  <shadow type="math_number" id="Pg5UiX|3]P[\`hez,,@5S">
-                    <field name="NUM">2</field>
-                  </shadow>
-                </value>
+                <statement name="SUBSTACK">
+                  <block type="motion_movesteps" id="JYYUr8a%*,g)B[+Qoat-">
+                    <value name="STEPS">
+                      <shadow type="math_number" id="[s*R%EkHmOwepZeL_6Nk">
+                        <field name="NUM">5</field>
+                      </shadow>
+                    </value>
+                    <next>
+                      <block type="control_wait" id="e]E^+/MK;l^R!qihu@.D">
+                        <value name="DURATION">
+                          <shadow type="math_positive_number" id="TFe%3]Da:67c=WtV{dqU">
+                            <field name="NUM">.1</field>
+                          </shadow>
+                        </value>
+                        <next>
+                          <block type="looks_nextcostume" id="P))9p7eu}k$9nq:_]a?/"></block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </statement>
                 <next>
-                  <block type="motion_ifonedgebounce" id="$hv@[ufPG}@Z:)~5.ni["></block>
+                  <block type="looks_hide" id="YO2?+;P4YGAGDPOv]hg*"></block>
                 </next>
               </block>
             </next>
           </block>
-        </statement>
+        </next>
       </block>
     </next>
   </block>
 </xml>`;
     }
-    logWorkspaceBlocksToConsole () {
+    logWorkspaceBlocksToConsole() {
         if (!this.workspace || !this.ScratchBlocks || !this.ScratchBlocks.Xml) {
             log.warn('Workspace not ready to export blocks to JSON.');
             return;
@@ -663,7 +740,7 @@ class Blocks extends React.Component {
         // eslint-disable-next-line no-console
         console.log('Workspace blocks JSON object:', xml);
     }
-    render () {
+    render() {
         /* eslint-disable no-unused-vars */
         const {
             anyModalVisible,
@@ -728,6 +805,11 @@ class Blocks extends React.Component {
                 {this.state.vibeAiModalOpen ? (
                     <VibeAiModal
                         xmlText={this.state.vibeAiXmlText}
+                        promptValue={this.state.vibeAiPrompt}
+                        errorMessage={this.state.vibeAiError}
+                        loading={this.state.vibeAiLoading}
+                        onPromptChange={this.handleVibeAiPromptChange}
+                        onGenerate={this.handleVibeAiGenerate}
                         onXmlChange={this.handleVibeAiXmlChange}
                         onTest={this.handleVibeAiTestPaste}
                         onInsert={this.handleVibeAiInsert}
