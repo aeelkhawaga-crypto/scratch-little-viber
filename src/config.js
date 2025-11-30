@@ -1,7 +1,7 @@
 const config = {
-    geminiApiKey: 'AIzaSyB0Hbi49aKXO-Y-mg9coQUCn7UtLpwvKqE',
-    geminiModel: 'gemini-2.0-flash',
-    systemInstruction: `
+  geminiApiKey: 'AIzaSyB0Hbi49aKXO-Y-mg9coQUCn7UtLpwvKqE',
+  geminiModel: 'gemini-2.0-flash',
+  systemInstruction: `
 You are an engine that converts natural-language instructions into Scratch 3.0 XML.
 
 Rules:
@@ -1446,6 +1446,237 @@ Another example valid output:
     </next>
   </block>
 </xml>
+
+<xml xmlns="http://www.w3.org/1999/xhtml">
+  <variables>
+    <variable type="" id="\`jEk@4|i[#Fk?(8x)AV.-my variable" islocal="false" iscloud="false">my variable</variable>
+    <variable type="" id="7Xf\`w30[W42W=gI@#J0%" islocal="false" iscloud="false">x velocity</variable>
+    <variable type="" id="1d_t9\`d@l!%P]M7Wj0{^" islocal="false" iscloud="false">y velocity</variable>
+    <variable type="" id="y[=9R:mI#1z]T]s+J8~?" islocal="false" iscloud="false">gravity</variable>
+    <variable type="" id="V%X+G}L!8b1n0c0n2{=;" islocal="false" iscloud="false">jump speed</variable>
+    <variable type="" id="mO:b3Bn6s%T0[w:XU(n3" islocal="false" iscloud="false">isGrounded</variable>
+  </variables>
+  <block type="operator_greaterthan" id="\`s,o;]g]4T8i^4N545F-" x="0" y="0"></block>
+  <block type="event_whenflagclicked" id="ca940pL^$|;Z/m\`2[#K@" x="320" y="38">
+    <next>
+      <block type="data_setvariableto" id="X(i=0C[vW4G\`#n~5m\`Qz">
+        <field name="VARIABLE" id="7Xf\`w30[W42W=gI@#J0%" variabletype="">x velocity</field>
+        <value name="VALUE">
+          <shadow type="math_number" id="=5j4sK.lG0Fh4d)62hXm">
+            <field name="NUM">0</field>
+          </shadow>
+        </value>
+        <next>
+          <block type="data_setvariableto" id="sK*]tS89w08X8T^\`l7s{">
+            <field name="VARIABLE" id="1d_t9\`d@l!%P]M7Wj0{^" variabletype="">y velocity</field>
+            <value name="VALUE">
+              <shadow type="math_number" id="4_M7mP#t\`e.z4s}R|#X}">
+                <field name="NUM">0</field>
+              </shadow>
+            </value>
+            <next>
+              <block type="data_setvariableto" id="p:N60#=aB{H/Bv*s;^g1">
+                <field name="VARIABLE" id="y[=9R:mI#1z]T]s+J8~?" variabletype="">gravity</field>
+                <value name="VALUE">
+                  <shadow type="math_number" id="t7YfHj~hW2k8W3j+!*V6">
+                    <field name="NUM">-1</field>
+                  </shadow>
+                </value>
+                <next>
+                  <block type="data_setvariableto" id="P+5[;+rG[q/3U@eE/g}#">
+                    <field name="VARIABLE" id="V%X+G}L!8b1n0c0n2{=;" variabletype="">jump speed</field>
+                    <value name="VALUE">
+                      <shadow type="math_number" id="76(wX,Q[9m7lJ,Q6J^=V">
+                        <field name="NUM">15</field>
+                      </shadow>
+                    </value>
+                    <next>
+                      <block type="data_setvariableto" id="i\`v9t2m6S^S=4+e967=U">
+                        <field name="VARIABLE" id="mO:b3Bn6s%T0[w:XU(n3" variabletype="">isGrounded</field>
+                        <value name="VALUE">
+                          <shadow type="math_number" id="r.wM5*u9\`M{9p}pC94[7">
+                            <field name="NUM">0</field>
+                          </shadow>
+                        </value>
+                        <next>
+                          <block type="control_forever" id="VzGvO.sQv[m7W1*h8+;t">
+                            <statement name="SUBSTACK">
+                              <block type="motion_changexby" id="E6]v5!6V{zC1W]9bA=f(">
+                                <value name="DX">
+                                  <shadow type="math_number" id="M(1r!@Q+z4hL89V,E5o}">
+                                    <field name="NUM">10</field>
+                                  </shadow>
+                                  <block type="data_variable" id="P^K:Z)7#]h!^h91n6G,(">
+                                    <field name="VARIABLE" id="7Xf\`w30[W42W=gI@#J0%" variabletype="">x velocity</field>
+                                  </block>
+                                </value>
+                                <next>
+                                  <block type="motion_changeyby" id="M65W5^69d,g]6Y(H_876">
+                                    <value name="DY">
+                                      <shadow type="math_number" id="j\`6T4n:s8Sj4b0e8i6z)">
+                                        <field name="NUM">10</field>
+                                      </shadow>
+                                      <block type="data_variable" id="!wE:Kq!j~%3L0Vwz(5k#">
+                                        <field name="VARIABLE" id="1d_t9\`d@l!%P]M7Wj0{^" variabletype="">y velocity</field>
+                                      </block>
+                                    </value>
+                                    <next>
+                                      <block type="data_setvariableto" id="\`X{k9^m[b7U@=z$Fm|*Y">
+                                        <field name="VARIABLE" id="7Xf\`w30[W42W=gI@#J0%" variabletype="">x velocity</field>
+                                        <value name="VALUE">
+                                          <shadow type="math_number" id="zV8z#%WjB~I/eA}sL,w-">
+                                            <field name="NUM">0</field>
+                                          </shadow>
+                                        </value>
+                                        <next>
+                                          <block type="data_changevariableby" id="T)t87m(r]vJg_T_j52*Q">
+                                            <field name="VARIABLE" id="1d_t9\`d@l!%P]M7Wj0{^" variabletype="">y velocity</field>
+                                            <value name="VALUE">
+                                              <shadow type="math_number" id="Jc1L%q:v[E-B[JvS61cW">
+                                                <field name="NUM">-1</field>
+                                              </shadow>
+                                              <block type="data_variable" id="w2n*p}oT6gN#G!9%r}0;">
+                                                <field name="VARIABLE" id="y[=9R:mI#1z]T]s+J8~?" variabletype="">gravity</field>
+                                              </block>
+                                            </value>
+                                            <next>
+                                              <block type="control_if" id="I9t!XpL~7wH9:4^I]x6Q">
+                                                <value name="CONDITION">
+                                                  <block type="operator_lt" id="$kOsfd2F.aRgI25)+Y@f">
+                                                    <value name="OPERAND1">
+                                                      <shadow type="text" id="n:j$zBW|S\`Gbu^rFy_Yf">
+                                                        <field name="TEXT"></field>
+                                                      </shadow>
+                                                      <block type="motion_yposition" id="aK([QZyXiFbUC|Xz}1y."></block>
+                                                    </value>
+                                                    <value name="OPERAND2">
+                                                      <shadow type="text" id="qnCw\`KH/fN0nGDl~Q^nN">
+                                                        <field name="TEXT">-120</field>
+                                                      </shadow>
+                                                    </value>
+                                                  </block>
+                                                </value>
+                                                <statement name="SUBSTACK">
+                                                  <block type="data_setvariableto" id="z_k[M?@0]tX-2lE]Q#j.">
+                                                    <field name="VARIABLE" id="1d_t9\`d@l!%P]M7Wj0{^" variabletype="">y velocity</field>
+                                                    <value name="VALUE">
+                                                      <shadow type="math_number" id="HjL~XvK[T8[x2]f5H]eO">
+                                                        <field name="NUM">0</field>
+                                                      </shadow>
+                                                    </value>
+                                                    <next>
+                                                      <block type="motion_sety" id="R^oR#N03c5$!W40vR,w{">
+                                                        <value name="Y">
+                                                          <shadow type="math_number" id="R+q^3Q|r/U|19~]Hk$m]">
+                                                            <field name="NUM">-120</field>
+                                                          </shadow>
+                                                        </value>
+                                                      </block>
+                                                    </next>
+                                                  </block>
+                                                </statement>
+                                                <next>
+                                                  <block type="control_if" id="54N:3w!n=t?@sY*vK#T9">
+                                                    <value name="CONDITION">
+                                                      <block type="sensing_keypressed" id="N~Hq,G774z#o0\`{E#g^o">
+                                                        <value name="KEY_OPTION">
+                                                          <shadow type="sensing_keyoptions" id="*t92U43+e|Y+1m+S0r:v">
+                                                            <field name="KEY_OPTION">right arrow</field>
+                                                          </shadow>
+                                                        </value>
+                                                      </block>
+                                                    </value>
+                                                    <statement name="SUBSTACK">
+                                                      <block type="data_setvariableto" id="mE1/M!+5g81Q6V_#$w;R">
+                                                        <field name="VARIABLE" id="7Xf\`w30[W42W=gI@#J0%" variabletype="">x velocity</field>
+                                                        <value name="VALUE">
+                                                          <shadow type="math_number" id="k4oP%k$W9{0P?W-0*0[C">
+                                                            <field name="NUM">5</field>
+                                                          </shadow>
+                                                        </value>
+                                                      </block>
+                                                    </statement>
+                                                    <next>
+                                                      <block type="control_if" id="Yc3H#sX7=3o?v#v^mQnS">
+                                                        <value name="CONDITION">
+                                                          <block type="sensing_keypressed" id="yW!5]uT3gKzS\`sVd/mHj">
+                                                            <value name="KEY_OPTION">
+                                                              <shadow type="sensing_keyoptions" id="w*M0y_@F%j!m[5N1[~3s">
+                                                                <field name="KEY_OPTION">left arrow</field>
+                                                              </shadow>
+                                                            </value>
+                                                          </block>
+                                                        </value>
+                                                        <statement name="SUBSTACK">
+                                                          <block type="data_setvariableto" id="s4\`Y9;e$2E191:i}hK]q">
+                                                            <field name="VARIABLE" id="7Xf\`w30[W42W=gI@#J0%" variabletype="">x velocity</field>
+                                                            <value name="VALUE">
+                                                              <shadow type="math_number" id="y1Ie+X_l9gL*Gk#fX(vI">
+                                                                <field name="NUM">-5</field>
+                                                              </shadow>
+                                                            </value>
+                                                          </block>
+                                                        </statement>
+                                                        <next>
+                                                          <block type="control_if" id="Q.Iq_!q;k.V23s2g]l?T">
+                                                            <value name="CONDITION">
+                                                              <block type="sensing_keypressed" id="w5$i#U8=H}f2.D~5p9L8">
+                                                                <value name="KEY_OPTION">
+                                                                  <shadow type="sensing_keyoptions" id="c-9U55\`6YF$F8q^r~;@;">
+                                                                    <field name="KEY_OPTION">space</field>
+                                                                  </shadow>
+                                                                </value>
+                                                              </block>
+                                                            </value>
+                                                            <statement name="SUBSTACK">
+                                                              <block type="data_setvariableto" id="W~nO}#gX^.sX92#w9W2l">
+                                                                <field name="VARIABLE" id="1d_t9\`d@l!%P]M7Wj0{^" variabletype="">y velocity</field>
+                                                                <value name="VALUE">
+                                                                  <shadow type="math_number" id="40#t*tDk/t=1_wS^0Ie!">
+                                                                    <field name="NUM">10</field>
+                                                                  </shadow>
+                                                                  <block type="data_variable" id="iR%g~\`p[5N#g5R7t?I[v">
+                                                                    <field name="VARIABLE" id="V%X+G}L!8b1n0c0n2{=;" variabletype="">jump speed</field>
+                                                                  </block>
+                                                                </value>
+                                                              </block>
+                                                            </statement>
+                                                          </block>
+                                                        </next>
+                                                      </block>
+                                                    </next>
+                                                  </block>
+                                                </next>
+                                              </block>
+                                            </next>
+                                          </block>
+                                        </next>
+                                      </block>
+                                    </next>
+                                  </block>
+                                </next>
+                              </block>
+                            </statement>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </next>
+  </block>
+</xml>
+
+Study those resoueces for more info about Scratch blocks:
+https://itsmybot.com/types-of-blocks-in-scratch/?utm_source=chatgpt.com
+
+https://usm.maine.edu/stem-outreach/wp-content/uploads/sites/421/2023/10/ScratchReferenceGuide14.pdf?utm_source=chatgpt.com
+
 `
 };
 

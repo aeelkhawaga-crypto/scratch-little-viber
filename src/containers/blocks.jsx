@@ -83,6 +83,11 @@ class Blocks extends React.Component {
             'handleVibeAiInsert',
             'handleVibeAiPromptChange',
             'handleVibeAiGenerate',
+            'handleVibeAiTabChange',
+            'setVibeBlocksPreviewRef',
+            'handleVibeBlocksZoomIn',
+            'handleVibeBlocksZoomOut',
+            'handleVibeBlocksFit',
             'openVibeAiModal',
             'closeVibeAiModal',
             'setBlocks',
@@ -92,13 +97,16 @@ class Blocks extends React.Component {
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
         this.ScratchBlocks.recordSoundCallback = this.handleOpenSoundRecorder;
         this.ignoreNextWorkspaceUpdate = false;
+        this.vibeBlocksWorkspace = null;
+        this.vibeBlocksPreviewRef = null;
         this.state = {
             prompt: null,
             vibeAiModalOpen: false,
             vibeAiXmlText: '',
             vibeAiPrompt: 'Make the cat move 10 steos when the green flag is clicked.',
             vibeAiError: '',
-            vibeAiLoading: false
+            vibeAiLoading: false,
+            vibeAiActiveTab: 'xml'
         };
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.toolboxUpdateQueue = [];
@@ -171,6 +179,7 @@ class Blocks extends React.Component {
             this.state.vibeAiPrompt !== nextState.vibeAiPrompt ||
             this.state.vibeAiError !== nextState.vibeAiError ||
             this.state.vibeAiLoading !== nextState.vibeAiLoading ||
+            this.state.vibeAiActiveTab !== nextState.vibeAiActiveTab ||
             this.props.isVisible !== nextProps.isVisible ||
             this._renderedToolboxXML !== nextProps.toolboxXML ||
             this.props.extensionLibraryVisible !== nextProps.extensionLibraryVisible ||
@@ -578,20 +587,129 @@ class Blocks extends React.Component {
             vibeAiXmlText,
             vibeAiPrompt: '',
             vibeAiError: '',
-            vibeAiLoading: false
+            vibeAiLoading: false,
+            vibeAiActiveTab: 'xml'
+        }, () => {
+            this.initializeVibeBlocksWorkspace();
+            this.refreshVibeBlocksPreview(vibeAiXmlText);
         });
     }
     closeVibeAiModal() {
+        this.disposeVibeBlocksWorkspace();
         this.setState({ vibeAiModalOpen: false });
     }
+    setVibeBlocksPreviewRef(ref) {
+        this.vibeBlocksPreviewRef = ref;
+        if (!ref) {
+            this.disposeVibeBlocksWorkspace();
+        }
+    }
+    initializeVibeBlocksWorkspace() {
+        if (!this.vibeBlocksPreviewRef || this.vibeBlocksWorkspace) return;
+        const themeName = this.props.theme || DEFAULT_THEME;
+        const mediaPath = (this.props.options && this.props.options.media) || 'static/blocks-media/';
+        this.vibeBlocksWorkspace = this.ScratchBlocks.inject(this.vibeBlocksPreviewRef, {
+            readOnly: true,
+            media: mediaPath,
+            zoom: {
+                controls: false,
+                wheel: false,
+                startScale: BLOCKS_DEFAULT_SCALE
+            },
+            comments: false,
+            collapse: false,
+            disable: false,
+            scrollbars: true,
+            toolbox: '<xml></xml>',
+            colours: getColorsForTheme(themeName)
+        });
+        this.resizeVibeBlocksWorkspace();
+    }
+    disposeVibeBlocksWorkspace() {
+        if (this.vibeBlocksWorkspace) {
+            this.vibeBlocksWorkspace.dispose();
+            this.vibeBlocksWorkspace = null;
+        }
+    }
+    handleVibeBlocksZoomIn() {
+        this.zoomVibeBlocksWorkspace(1.2);
+    }
+    handleVibeBlocksZoomOut() {
+        this.zoomVibeBlocksWorkspace(0.8);
+    }
+    handleVibeBlocksFit() {
+        if (this.vibeBlocksWorkspace && typeof this.vibeBlocksWorkspace.zoomToFit === 'function') {
+            this.vibeBlocksWorkspace.zoomToFit();
+            this.resizeVibeBlocksWorkspace();
+        }
+    }
+    zoomVibeBlocksWorkspace(factor) {
+        if (!this.vibeBlocksWorkspace || !this.ScratchBlocks) return;
+        const metrics = this.vibeBlocksWorkspace.getMetrics ? this.vibeBlocksWorkspace.getMetrics() : null;
+        const centerX = metrics ? metrics.viewWidth / 2 : 0;
+        const centerY = metrics ? metrics.viewHeight / 2 : 0;
+        if (typeof this.vibeBlocksWorkspace.zoom === 'function') {
+            this.vibeBlocksWorkspace.zoom(centerX, centerY, factor);
+        } else if (typeof this.vibeBlocksWorkspace.setScale === 'function') {
+            const currentScale = this.vibeBlocksWorkspace.scale || 1;
+            this.vibeBlocksWorkspace.setScale(currentScale * factor);
+            this.vibeBlocksWorkspace.resizeContents && this.vibeBlocksWorkspace.resizeContents();
+        }
+        this.resizeVibeBlocksWorkspace();
+    }
+    refreshVibeBlocksPreview(xmlText) {
+        if (!this.vibeBlocksWorkspace) return;
+        const text = xmlText || '<xml></xml>';
+        try {
+            const dom = this.ScratchBlocks.Xml.textToDom(text);
+            this.vibeBlocksWorkspace.clear();
+            this.ScratchBlocks.Xml.domToWorkspace(dom, this.vibeBlocksWorkspace);
+            this.resizeVibeBlocksWorkspace();
+        } catch (e) {
+            log.warn('Could not render blocks preview from XML', e);
+        }
+    }
+    resizeVibeBlocksWorkspace() {
+        if (this.vibeBlocksWorkspace && this.ScratchBlocks &&
+            typeof this.ScratchBlocks.svgResize === 'function') {
+            window.requestAnimationFrame(() => {
+                this.ScratchBlocks.svgResize(this.vibeBlocksWorkspace);
+                if (this.vibeBlocksWorkspace.scrollbar) {
+                    this.vibeBlocksWorkspace.scrollbar.resize();
+                }
+            });
+        }
+    }
     handleVibeAiXmlChange(event) {
-        this.setState({ vibeAiXmlText: event.target.value });
+        const newXml = event.target.value;
+        this.setState({ vibeAiXmlText: newXml });
+        if (this.state.vibeAiActiveTab === 'blocks') {
+            this.initializeVibeBlocksWorkspace();
+            this.refreshVibeBlocksPreview(newXml);
+        } else {
+            this.refreshVibeBlocksPreview(newXml);
+        }
     }
     handleVibeAiTestPaste() {
-        this.setState({ vibeAiXmlText: this.getVibeAiTestXml() });
+        const testXml = this.getVibeAiTestXml();
+        this.setState({ vibeAiXmlText: testXml });
+        if (this.state.vibeAiActiveTab === 'blocks') {
+            this.initializeVibeBlocksWorkspace();
+            this.refreshVibeBlocksPreview(testXml);
+        } else {
+            this.refreshVibeBlocksPreview(testXml);
+        }
     }
     handleVibeAiPromptChange(event) {
         this.setState({ vibeAiPrompt: event.target.value });
+    }
+    handleVibeAiTabChange(activeTab) {
+        this.setState({ vibeAiActiveTab: activeTab }, () => {
+            if (activeTab === 'blocks') {
+                this.initializeVibeBlocksWorkspace();
+                this.refreshVibeBlocksPreview(this.state.vibeAiXmlText || this.getWorkspaceXmlText());
+            }
+        });
     }
     sanitizeAiContent(content) {
         if (!content) return '';
@@ -621,7 +739,12 @@ class Blocks extends React.Component {
                 prompt,
                 currentXml: xmlText
             });
-            this.setState({ vibeAiXmlText: this.sanitizeAiContent(aiResponse) });
+            const cleaned = this.sanitizeAiContent(aiResponse);
+            this.setState({ vibeAiXmlText: cleaned });
+            if (this.state.vibeAiActiveTab === 'blocks') {
+                this.initializeVibeBlocksWorkspace();
+            }
+            this.refreshVibeBlocksPreview(cleaned);
         } catch (err) {
             this.setState({ vibeAiError: err.message || 'Failed to generate code.' });
         } finally {
@@ -808,11 +931,17 @@ class Blocks extends React.Component {
                         promptValue={this.state.vibeAiPrompt}
                         errorMessage={this.state.vibeAiError}
                         loading={this.state.vibeAiLoading}
+                        activeTab={this.state.vibeAiActiveTab}
                         onPromptChange={this.handleVibeAiPromptChange}
                         onGenerate={this.handleVibeAiGenerate}
                         onXmlChange={this.handleVibeAiXmlChange}
                         onTest={this.handleVibeAiTestPaste}
                         onInsert={this.handleVibeAiInsert}
+                        onTabChange={this.handleVibeAiTabChange}
+                        blocksPreviewRef={this.setVibeBlocksPreviewRef}
+                        onBlocksZoomIn={this.handleVibeBlocksZoomIn}
+                        onBlocksZoomOut={this.handleVibeBlocksZoomOut}
+                        onBlocksFit={this.handleVibeBlocksFit}
                         onCancel={this.closeVibeAiModal}
                     />
                 ) : null}

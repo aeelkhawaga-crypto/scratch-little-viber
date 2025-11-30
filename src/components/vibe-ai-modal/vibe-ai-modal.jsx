@@ -16,7 +16,13 @@ const VibeAiModal = ({
     promptValue,
     xmlText,
     errorMessage,
-    loading
+    loading,
+    activeTab,
+    onTabChange,
+    blocksPreviewRef,
+    onBlocksZoomIn,
+    onBlocksZoomOut,
+    onBlocksFit
 }) => {
     const handleClose = () => onCancel();
     return (
@@ -41,19 +47,79 @@ const VibeAiModal = ({
                         />
                     </div>
                     <div className={styles.outputColumn}>
-                        <div className={styles.label}>AI response</div>
                         {loading ? (
                             <div className={styles.loadingMessage}>
-                                AI agent is thinking...
+                                <span className={styles.loadingText}>AI agent is thinking</span>
+                                <span className={styles.dots}>
+                                    <span className={styles.dot} />
+                                    <span className={styles.dot} />
+                                    <span className={styles.dot} />
+                                </span>
                             </div>
                         ) : null}
-                        <textarea
-                            aria-label="AI response preview"
-                            className={styles.outputArea}
-                            value={xmlText}
-                            onChange={onXmlChange}
-                            disabled={loading}
-                        />
+                        <div className={styles.tabsHeader}>
+                            <button
+                                type="button"
+                                className={`${styles.tabButton} ${activeTab === 'xml' ? styles.activeTab : ''}`}
+                                onClick={() => onTabChange('xml')}
+                            >
+                                XML
+                            </button>
+                            <button
+                                type="button"
+                                className={`${styles.tabButton} ${activeTab === 'blocks' ? styles.activeTab : ''}`}
+                                onClick={() => onTabChange('blocks')}
+                            >
+                                Blocks
+                            </button>
+
+
+                        </div>
+                        <div className={styles.tabBody}>
+                            <div className={`${styles.tabPanel} ${activeTab === 'xml' ? styles.activePanel : styles.hiddenPanel}`}>
+                                <textarea
+                                    aria-label="AI response preview"
+                                    className={styles.outputArea}
+                                    value={xmlText}
+                                    onChange={onXmlChange}
+                                    disabled={loading}
+                                />
+                            </div>
+                            <div className={`${styles.tabPanel} ${activeTab === 'blocks' ? styles.activePanel : styles.hiddenPanel}`}>
+                                <div className={styles.blocksTab}>
+                                    <div
+                                        className={styles.blocksPreview}
+                                        ref={blocksPreviewRef}
+                                    />
+                                    <div className={styles.blocksControlsVertical}>
+                                        <button
+                                            type="button"
+                                            className={styles.controlButton}
+                                            onClick={onBlocksZoomIn}
+                                            title="Zoom in"
+                                        >
+                                            +
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={styles.controlButton}
+                                            onClick={onBlocksFit}
+                                            title="Fit to view"
+                                        >
+                                            <span className={styles.squareIcon} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={styles.controlButton}
+                                            onClick={onBlocksZoomOut}
+                                            title="Zoom out"
+                                        >
+                                            –
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {errorMessage ? (
@@ -88,7 +154,13 @@ VibeAiModal.propTypes = {
     onXmlChange: PropTypes.func.isRequired,
     errorMessage: PropTypes.string,
     xmlText: PropTypes.string,
-    loading: PropTypes.bool
+    loading: PropTypes.bool,
+    activeTab: PropTypes.oneOf(['xml', 'blocks']),
+    onTabChange: PropTypes.func.isRequired,
+    blocksPreviewRef: PropTypes.func.isRequired,
+    onBlocksZoomIn: PropTypes.func.isRequired,
+    onBlocksZoomOut: PropTypes.func.isRequired,
+    onBlocksFit: PropTypes.func.isRequired
 };
 
 export default VibeAiModal;

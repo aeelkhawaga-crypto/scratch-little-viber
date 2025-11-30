@@ -16,12 +16,14 @@
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
     min-height: 280px;
+    align-items: stretch;
 }
 
 .inputColumn,
 .outputColumn {
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .label {
@@ -55,11 +57,154 @@
     pointer-events: auto;
 }
 
-.loadingMessage {
-    margin-bottom: 0.25rem;
-    font-style: italic;
-    color: #666;
+.tabsHeader {
+    display: inline-flex;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.tabButton {
+    padding: 0.5rem 0.75rem;
+    background: #f5f6fa;
+    border: none;
+    color: #444;
+    cursor: pointer;
+    font-weight: 600;
     font-size: 0.9rem;
+}
+
+.tabButton + .tabButton {
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.activeTab {
+    background: #4c97ff;
+    color: #fff;
+    border-color: #4c97ff;
+}
+
+.tabBody {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.tabPanel {
+    display: none;
+}
+
+.activePanel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.hiddenPanel {
+    display: none;
+}
+
+.blocksTab {
+    flex: 1;
+    min-height: 240px;
+    border: 1px dashed rgba(0, 0, 0, 0.12);
+    border-radius: 6px;
+    background: #fafbff;
+    overflow: auto;
+    position: relative;
+}
+
+.blocksPreview {
+    width: 100%;
+    min-width: 320px;
+    min-height: 240px;
+    height: 100%;
+}
+
+.blocksControlsVertical {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.35rem;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    z-index: 3;
+}
+
+.controlButton {
+    border: 1px solid #4c97ff;
+    background: linear-gradient(135deg, #f7fbff, #e8f1ff);
+    color: #2b7be8;
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    font-weight: 800;
+    cursor: pointer;
+    min-width: 44px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.controlButton:hover {
+    background: #e6f0ff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.squareIcon {
+    width: 10px;
+    height: 10px;
+    border: 2px solid #2b7be8;
+    border-radius: 2px;
+    display: inline-block;
+    box-shadow: inset 0 0 0 1px #dce7ff;
+}
+
+.loadingMessage {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+    font-style: italic;
+    color: #444;
+    font-size: 0.95rem;
+}
+
+.loadingText {
+    font-weight: 700;
+}
+
+.dots {
+    display: inline-flex;
+    gap: 0.2rem;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4c97ff;
+    display: inline-block;
+    animation: pulse 1s infinite ease-in-out;
+}
+
+.dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes pulse {
+    0% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-4px); opacity: 1; }
+    100% { transform: translateY(0); opacity: 0.4; }
 }
 
 .buttonRow {
