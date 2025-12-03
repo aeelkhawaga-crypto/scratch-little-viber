@@ -83,7 +83,6 @@ class Blocks extends React.Component {
             'handleVibeAiInsert',
             'handleVibeAiPromptChange',
             'handleVibeAiGenerate',
-            'handleVibeAiTabChange',
             'setVibeBlocksPreviewRef',
             'handleVibeBlocksZoomIn',
             'handleVibeBlocksZoomOut',
@@ -105,8 +104,7 @@ class Blocks extends React.Component {
             vibeAiXmlText: '',
             vibeAiPrompt: 'Make the cat move 10 steos when the green flag is clicked.',
             vibeAiError: '',
-            vibeAiLoading: false,
-            vibeAiActiveTab: 'xml'
+            vibeAiLoading: false
         };
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.toolboxUpdateQueue = [];
@@ -179,7 +177,6 @@ class Blocks extends React.Component {
             this.state.vibeAiPrompt !== nextState.vibeAiPrompt ||
             this.state.vibeAiError !== nextState.vibeAiError ||
             this.state.vibeAiLoading !== nextState.vibeAiLoading ||
-            this.state.vibeAiActiveTab !== nextState.vibeAiActiveTab ||
             this.props.isVisible !== nextProps.isVisible ||
             this._renderedToolboxXML !== nextProps.toolboxXML ||
             this.props.extensionLibraryVisible !== nextProps.extensionLibraryVisible ||
@@ -587,8 +584,7 @@ class Blocks extends React.Component {
             vibeAiXmlText,
             vibeAiPrompt: '',
             vibeAiError: '',
-            vibeAiLoading: false,
-            vibeAiActiveTab: 'xml'
+            vibeAiLoading: false
         }, () => {
             this.initializeVibeBlocksWorkspace();
             this.refreshVibeBlocksPreview(vibeAiXmlText);
@@ -602,7 +598,10 @@ class Blocks extends React.Component {
         this.vibeBlocksPreviewRef = ref;
         if (!ref) {
             this.disposeVibeBlocksWorkspace();
+            return;
         }
+        this.initializeVibeBlocksWorkspace();
+        this.refreshVibeBlocksPreview(this.state.vibeAiXmlText || this.getWorkspaceXmlText());
     }
     initializeVibeBlocksWorkspace() {
         if (!this.vibeBlocksPreviewRef || this.vibeBlocksWorkspace) return;
@@ -683,33 +682,17 @@ class Blocks extends React.Component {
     handleVibeAiXmlChange(event) {
         const newXml = event.target.value;
         this.setState({ vibeAiXmlText: newXml });
-        if (this.state.vibeAiActiveTab === 'blocks') {
-            this.initializeVibeBlocksWorkspace();
-            this.refreshVibeBlocksPreview(newXml);
-        } else {
-            this.refreshVibeBlocksPreview(newXml);
-        }
+        this.initializeVibeBlocksWorkspace();
+        this.refreshVibeBlocksPreview(newXml);
     }
     handleVibeAiTestPaste() {
         const testXml = this.getVibeAiTestXml();
         this.setState({ vibeAiXmlText: testXml });
-        if (this.state.vibeAiActiveTab === 'blocks') {
-            this.initializeVibeBlocksWorkspace();
-            this.refreshVibeBlocksPreview(testXml);
-        } else {
-            this.refreshVibeBlocksPreview(testXml);
-        }
+        this.initializeVibeBlocksWorkspace();
+        this.refreshVibeBlocksPreview(testXml);
     }
     handleVibeAiPromptChange(event) {
         this.setState({ vibeAiPrompt: event.target.value });
-    }
-    handleVibeAiTabChange(activeTab) {
-        this.setState({ vibeAiActiveTab: activeTab }, () => {
-            if (activeTab === 'blocks') {
-                this.initializeVibeBlocksWorkspace();
-                this.refreshVibeBlocksPreview(this.state.vibeAiXmlText || this.getWorkspaceXmlText());
-            }
-        });
     }
     sanitizeAiContent(content) {
         if (!content) return '';
@@ -741,9 +724,7 @@ class Blocks extends React.Component {
             });
             const cleaned = this.sanitizeAiContent(aiResponse);
             this.setState({ vibeAiXmlText: cleaned });
-            if (this.state.vibeAiActiveTab === 'blocks') {
-                this.initializeVibeBlocksWorkspace();
-            }
+            this.initializeVibeBlocksWorkspace();
             this.refreshVibeBlocksPreview(cleaned);
         } catch (err) {
             this.setState({ vibeAiError: err.message || 'Failed to generate code.' });
@@ -931,13 +912,11 @@ class Blocks extends React.Component {
                         promptValue={this.state.vibeAiPrompt}
                         errorMessage={this.state.vibeAiError}
                         loading={this.state.vibeAiLoading}
-                        activeTab={this.state.vibeAiActiveTab}
                         onPromptChange={this.handleVibeAiPromptChange}
                         onGenerate={this.handleVibeAiGenerate}
                         onXmlChange={this.handleVibeAiXmlChange}
                         onTest={this.handleVibeAiTestPaste}
                         onInsert={this.handleVibeAiInsert}
-                        onTabChange={this.handleVibeAiTabChange}
                         blocksPreviewRef={this.setVibeBlocksPreviewRef}
                         onBlocksZoomIn={this.handleVibeBlocksZoomIn}
                         onBlocksZoomOut={this.handleVibeBlocksZoomOut}

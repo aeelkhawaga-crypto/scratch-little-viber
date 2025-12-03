@@ -17,8 +17,6 @@ const VibeAiModal = ({
     xmlText,
     errorMessage,
     loading,
-    activeTab,
-    onTabChange,
     blocksPreviewRef,
     onBlocksZoomIn,
     onBlocksZoomOut,
@@ -29,98 +27,75 @@ const VibeAiModal = ({
         <Modal
             id="vibeAiModal"
             className={styles.modalContent}
-            contentLabel="Ask AI to edit your code"
+            contentLabel="Ask the Viber to edit your code"
             onRequestClose={handleClose}
         >
             <Box className={styles.body}>
-                <div className={styles.columns}>
-                    <div className={styles.inputColumn}>
-                        <label className={styles.label}>
-                            Enter your command
-                        </label>
+                {loading ? (
+                    <div className={styles.loadingMessage}>
+                        <span className={styles.loadingText}>The viber is thinking</span>
+                        <span className={styles.dots}>
+                            <span className={styles.dot} />
+                            <span className={styles.dot} />
+                            <span className={styles.dot} />
+                        </span>
+                    </div>
+                ) : null}
+                <div className={styles.viewsRow}>
+                    <div className={styles.viewPanel}>
+                        <div className={styles.panelHeader}>XML</div>
                         <textarea
-                            aria-label="Your command to the AI"
-                            className={styles.textArea}
-                            placeholder="Describe how you want the code to change..."
-                            value={promptValue}
-                            onChange={onPromptChange}
+                            aria-label="AI response preview"
+                            className={styles.outputArea}
+                            value={xmlText}
+                            onChange={onXmlChange}
+                            disabled={loading}
                         />
                     </div>
-                    <div className={styles.outputColumn}>
-                        {loading ? (
-                            <div className={styles.loadingMessage}>
-                                <span className={styles.loadingText}>AI agent is thinking</span>
-                                <span className={styles.dots}>
-                                    <span className={styles.dot} />
-                                    <span className={styles.dot} />
-                                    <span className={styles.dot} />
-                                </span>
-                            </div>
-                        ) : null}
-                        <div className={styles.tabsHeader}>
-                            <button
-                                type="button"
-                                className={`${styles.tabButton} ${activeTab === 'xml' ? styles.activeTab : ''}`}
-                                onClick={() => onTabChange('xml')}
-                            >
-                                XML
-                            </button>
-                            <button
-                                type="button"
-                                className={`${styles.tabButton} ${activeTab === 'blocks' ? styles.activeTab : ''}`}
-                                onClick={() => onTabChange('blocks')}
-                            >
-                                Blocks
-                            </button>
-
-
-                        </div>
-                        <div className={styles.tabBody}>
-                            <div className={`${styles.tabPanel} ${activeTab === 'xml' ? styles.activePanel : styles.hiddenPanel}`}>
-                                <textarea
-                                    aria-label="AI response preview"
-                                    className={styles.outputArea}
-                                    value={xmlText}
-                                    onChange={onXmlChange}
-                                    disabled={loading}
-                                />
-                            </div>
-                            <div className={`${styles.tabPanel} ${activeTab === 'blocks' ? styles.activePanel : styles.hiddenPanel}`}>
-                                <div className={styles.blocksTab}>
-                                    <div
-                                        className={styles.blocksPreview}
-                                        ref={blocksPreviewRef}
-                                    />
-                                    <div className={styles.blocksControlsVertical}>
-                                        <button
-                                            type="button"
-                                            className={styles.controlButton}
-                                            onClick={onBlocksZoomIn}
-                                            title="Zoom in"
-                                        >
-                                            +
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.controlButton}
-                                            onClick={onBlocksFit}
-                                            title="Fit to view"
-                                        >
-                                            <span className={styles.squareIcon} />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.controlButton}
-                                            onClick={onBlocksZoomOut}
-                                            title="Zoom out"
-                                        >
-                                            –
-                                        </button>
-                                    </div>
-                                </div>
+                    <div className={styles.viewPanel}>
+                        <div className={styles.panelHeader}>Blocks</div>
+                        <div className={styles.blocksTab}>
+                            <div
+                                className={styles.blocksPreview}
+                                ref={blocksPreviewRef}
+                            />
+                            <div className={styles.blocksControlsVertical}>
+                                <button
+                                    type="button"
+                                    className={styles.controlButton}
+                                    onClick={onBlocksZoomIn}
+                                    title="Zoom in"
+                                >
+                                    +
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.controlButton}
+                                    onClick={onBlocksFit}
+                                    title="Fit to view"
+                                >
+                                    <span className={styles.squareIcon} />
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.controlButton}
+                                    onClick={onBlocksZoomOut}
+                                    title="Zoom out"
+                                >
+                                    –
+                                </button>
                             </div>
                         </div>
                     </div>
+                </div>
+                <div className={styles.commandRow}>
+                    <textarea
+                        aria-label="Your command to the AI"
+                        className={styles.promptArea}
+                        placeholder="Describe how you want the code to change..."
+                        value={promptValue}
+                        onChange={onPromptChange}
+                    />
                 </div>
                 {errorMessage ? (
                     <div className={styles.error}>{errorMessage}</div>
@@ -155,8 +130,6 @@ VibeAiModal.propTypes = {
     errorMessage: PropTypes.string,
     xmlText: PropTypes.string,
     loading: PropTypes.bool,
-    activeTab: PropTypes.oneOf(['xml', 'blocks']),
-    onTabChange: PropTypes.func.isRequired,
     blocksPreviewRef: PropTypes.func.isRequired,
     onBlocksZoomIn: PropTypes.func.isRequired,
     onBlocksZoomOut: PropTypes.func.isRequired,

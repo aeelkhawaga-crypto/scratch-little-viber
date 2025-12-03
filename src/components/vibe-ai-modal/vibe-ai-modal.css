@@ -1,46 +1,28 @@
 .modalContent {
-    width: 700px;
-    margin: 50px auto;
+    width: 1100px;
+    max-width: 90vw;
+    margin: 30px auto;
 }
 
 .body {
     background: white;
-    padding: 1.5rem 2.25rem;
+    padding: 1.75rem 2.5rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
-.columns {
+.viewsRow {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
-    min-height: 280px;
+    min-height: 360px;
     align-items: stretch;
-}
-
-.inputColumn,
-.outputColumn {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
 }
 
 .label {
     font-weight: bold;
     margin-bottom: 0.5rem;
-}
-
-.textArea {
-    flex: 1;
-    min-height: 240px;
-    resize: vertical;
-    padding: 0.75rem;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    border-radius: 6px;
-    font-size: 14px;
-    user-select: text;
-    pointer-events: auto;
 }
 
 .outputArea {
@@ -57,52 +39,21 @@
     pointer-events: auto;
 }
 
-.tabsHeader {
-    display: inline-flex;
+.viewPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: #f8f9fc;
     border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    padding: 0.75rem;
+    min-height: 0;
 }
 
-.tabButton {
-    padding: 0.5rem 0.75rem;
-    background: #f5f6fa;
-    border: none;
-    color: #444;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 0.9rem;
-}
-
-.tabButton + .tabButton {
-    border-left: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.activeTab {
-    background: #4c97ff;
-    color: #fff;
-    border-color: #4c97ff;
-}
-
-.tabBody {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-}
-
-.tabPanel {
-    display: none;
-}
-
-.activePanel {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-}
-
-.hiddenPanel {
-    display: none;
+.panelHeader {
+    font-weight: 700;
+    color: #2b7be8;
+    letter-spacing: 0.01em;
 }
 
 .blocksTab {
@@ -122,6 +73,22 @@
     height: 100%;
 }
 
+.commandRow {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.promptArea {
+    min-height: 120px;
+    resize: vertical;
+    padding: 0.9rem 1rem;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    font-size: 15px;
+    background: #fff;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
 .blocksControlsVertical {
     position: absolute;
     right: 8px;

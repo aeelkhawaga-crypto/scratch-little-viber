@@ -25,6 +25,7 @@ Agent Rules for Generating Scratch XML
 - XML must begin with <xml ...> and end with </xml>.
 - All generated code must attach to an event. If the user doesn’t specify one, start with: when green flag clicked.
 - You will always get the last version of the code. if something was removed in the last version, do not add it back unless it's specifically mentioned by the user or it was required to complete the task.
+- Don't create unused variables or broadcasts. Only include what is necessary for the user's request.
 
 Example valid output:
 <xml xmlns="http://www.w3.org/1999/xhtml">
@@ -1665,6 +1666,104 @@ Another example valid output:
                 </next>
               </block>
             </next>
+          </block>
+        </next>
+      </block>
+    </next>
+  </block>
+</xml>
+
+Another Scratch project XML example:
+<xml xmlns="http://www.w3.org/1999/xhtml">
+  <variables>
+    <variable type="" id="\`jEk@4|i[#Fk?(8x)AV.-my variable" islocal="false" iscloud="false">my variable</variable>
+    <variable type="" id="e1ncW{b+}P0[qWkC@QYf" islocal="false" iscloud="false">brightness</variable>
+  </variables>
+  <block type="operator_greaterthan" id="$kOsfd2F.aRgI25)+Y@f" x="0" y="0"></block>
+  <block type="event_whenflagclicked" id="ca940pL^$|;Z/m\`2[#K@" x="320" y="38">
+    <next>
+      <block type="data_setvariableto" id="X(i=0C[vW4G\`#n~5m\`Qz">
+        <field name="VARIABLE" id="e1ncW{b+}P0[qWkC@QYf" variabletype="">brightness</field>
+        <value name="VALUE">
+          <shadow type="math_number" id="=5j4sK.lG0Fh4d)62hXm">
+            <field name="NUM">0</field>
+          </shadow>
+        </value>
+        <next>
+          <block type="control_forever" id="VzGvO.sQv[m7W1*h8+;t">
+            <statement name="SUBSTACK">
+              <block type="data_changevariableby" id="qa4D=7Mu5ZnKp!=$^(_S">
+                <field name="VARIABLE" id="e1ncW{b+}P0[qWkC@QYf" variabletype="">brightness</field>
+                <value name="VALUE">
+                  <shadow type="math_number" id="e5XL]8d$/5/fT:$Dg!c%">
+                    <field name="NUM">10</field>
+                  </shadow>
+                </value>
+                <next>
+                  <block type="looks_changeeffectby" id="M65W5^69d,g]6Y(H_876">
+                    <field name="EFFECT">BRIGHTNESS</field>
+                    <value name="CHANGE">
+                      <shadow type="math_number" id="j\`6T4n:s8Sj4b0e8i6z)">
+                        <field name="NUM">10</field>
+                      </shadow>
+                    </value>
+                    <next>
+                      <block type="control_wait" id="\`X{k9^m[b7U@=z$Fm|*Y">
+                        <value name="DURATION">
+                          <shadow type="math_number" id="zV8z#%WjB~I/eA}sL,w-">
+                            <field name="NUM">0.1</field>
+                          </shadow>
+                        </value>
+                        <next>
+                          <block type="control_if" id="I9t!XpL~7wH9:4^I]x6Q">
+                            <value name="CONDITION">
+                              <block type="operator_gt" id="NT;^}Wh4gqoi?8W,DwbW">
+                                <value name="OPERAND1">
+                                  <shadow type="text" id="DZ[nqJ-d4c#0*ivU7+%~">
+                                    <field name="TEXT"></field>
+                                  </shadow>
+                                  <block type="data_variable" id="1#*az\`5XB$I(eSHGu$Xl">
+                                    <field name="VARIABLE" id="e1ncW{b+}P0[qWkC@QYf" variabletype="">brightness</field>
+                                  </block>
+                                </value>
+                                <value name="OPERAND2">
+                                  <shadow type="text" id="ImUT$O8#O2poG8{;Z2]:">
+                                    <field name="TEXT">100</field>
+                                  </shadow>
+                                </value>
+                              </block>
+                            </value>
+                            <statement name="SUBSTACK">
+                              <block type="data_setvariableto" id="z_k[M?@0]tX-2lE]Q#j.">
+                                <field name="VARIABLE" id="e1ncW{b+}P0[qWkC@QYf" variabletype="">brightness</field>
+                                <value name="VALUE">
+                                  <shadow type="math_number" id="HjL~XvK[T8[x2]f5H]eO">
+                                    <field name="NUM">-50</field>
+                                  </shadow>
+                                </value>
+                                <next>
+                                  <block type="looks_seteffectto" id="6GWI|U3^azZ./!n#H][_">
+                                    <field name="EFFECT">BRIGHTNESS</field>
+                                    <value name="VALUE">
+                                      <shadow type="math_number" id="Jf.@+^Yygn_0KV8P0-,T">
+                                        <field name="NUM">0</field>
+                                      </shadow>
+                                      <block type="data_variable" id="~WY@ivPMk5K6Zg[Wb)ge">
+                                        <field name="VARIABLE" id="e1ncW{b+}P0[qWkC@QYf" variabletype="">brightness</field>
+                                      </block>
+                                    </value>
+                                  </block>
+                                </next>
+                              </block>
+                            </statement>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </statement>
           </block>
         </next>
       </block>
