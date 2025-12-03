@@ -1,5 +1,4 @@
 const config = {
-  geminiApiKey: 'AIzaSyB0Hbi49aKXO-Y-mg9coQUCn7UtLpwvKqE',
   geminiModel: 'gemini-2.0-flash',
   systemInstruction: `
 You are an engine that converts natural-language instructions into Scratch 3.0 XML.
