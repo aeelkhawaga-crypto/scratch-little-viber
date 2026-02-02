@@ -82,6 +82,7 @@ class Blocks extends React.Component {
             'handleVibeAiTestPaste',
             'handleVibeAiInsert',
             'handleVibeAiPromptChange',
+            'handleVibeAiModelChange',
             'handleVibeAiGenerate',
             'setVibeBlocksPreviewRef',
             'handleVibeBlocksZoomIn',
@@ -104,7 +105,8 @@ class Blocks extends React.Component {
             vibeAiXmlText: '',
             vibeAiPrompt: 'Make the cat move 10 steos when the green flag is clicked.',
             vibeAiError: '',
-            vibeAiLoading: false
+            vibeAiLoading: false,
+            vibeAiSelectedModel: 'meta-llama/Llama-3.2-3B-Instruct'
         };
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.toolboxUpdateQueue = [];
@@ -177,6 +179,7 @@ class Blocks extends React.Component {
             this.state.vibeAiPrompt !== nextState.vibeAiPrompt ||
             this.state.vibeAiError !== nextState.vibeAiError ||
             this.state.vibeAiLoading !== nextState.vibeAiLoading ||
+            this.state.vibeAiApiKey !== nextState.vibeAiApiKey ||
             this.props.isVisible !== nextProps.isVisible ||
             this._renderedToolboxXML !== nextProps.toolboxXML ||
             this.props.extensionLibraryVisible !== nextProps.extensionLibraryVisible ||
@@ -694,6 +697,9 @@ class Blocks extends React.Component {
     handleVibeAiPromptChange(event) {
         this.setState({ vibeAiPrompt: event.target.value });
     }
+    handleVibeAiModelChange(event) {
+        this.setState({ vibeAiSelectedModel: event.target.value });
+    }
     sanitizeAiContent(content) {
         if (!content) return '';
         let cleaned = content.trim();
@@ -712,6 +718,7 @@ class Blocks extends React.Component {
     async handleVibeAiGenerate() {
         const prompt = (this.state.vibeAiPrompt || '').trim();
         const xmlText = this.state.vibeAiXmlText || this.getWorkspaceXmlText();
+        const selectedModel = this.state.vibeAiSelectedModel;
         if (!prompt) {
             this.setState({ vibeAiError: 'Please enter a prompt.' });
             return;
@@ -720,7 +727,8 @@ class Blocks extends React.Component {
         try {
             const aiResponse = await generateVibeXml({
                 prompt,
-                currentXml: xmlText
+                currentXml: xmlText,
+                model: selectedModel
             });
             const cleaned = this.sanitizeAiContent(aiResponse);
             this.setState({ vibeAiXmlText: cleaned });
@@ -913,6 +921,8 @@ class Blocks extends React.Component {
                         errorMessage={this.state.vibeAiError}
                         loading={this.state.vibeAiLoading}
                         onPromptChange={this.handleVibeAiPromptChange}
+                        selectedModel={this.state.vibeAiSelectedModel}
+                        onModelChange={this.handleVibeAiModelChange}
                         onGenerate={this.handleVibeAiGenerate}
                         onXmlChange={this.handleVibeAiXmlChange}
                         onTest={this.handleVibeAiTestPaste}

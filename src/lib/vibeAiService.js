@@ -21,25 +21,24 @@ const extractTextFromResponse = result => {
   if (typeof response.text === 'function') {
     return response.text();
   }
-  if (Array.isArray(response.candidates)) {
-    for (const candidate of response.candidates) {
-      const parts = candidate?.content?.parts;
-      if (Array.isArray(parts)) {
-        const textPart = parts.find(part => part?.text);
-        if (textPart?.text) return textPart.text;
-      }
-      if (candidate?.content?.text) return candidate.content.text;
-      if (candidate?.text) return candidate.text;
-    }
+  // Fallback for different response formats
+  if (typeof response === 'string') {
+    return response;
+  }
+  if (response.content) {
+    return response.content;
   }
   return '';
 };
 
 export async function generateVibeXml({
   prompt,
-  currentXml
+  currentXml,
+  model
 }) {
-  const chat = chatManager.getChat();
+  const chat = chatManager.getChat({
+    model: model
+  });
 
   const userPayload = {
     prompt: currentXml,
