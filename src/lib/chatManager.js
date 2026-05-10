@@ -57,13 +57,16 @@ class ChatManager {
         model: this.model,
         messages: messages,
         max_tokens: 4096,
-        temperature: 0.7
+        temperature: 0.1
       })
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error: ${response.status}`);
+      const errMsg = typeof errorData.error === 'string'
+        ? errorData.error
+        : JSON.stringify(errorData.error) || `HTTP error: ${response.status}`;
+      throw new Error(errMsg);
     }
 
     const data = await response.json();
