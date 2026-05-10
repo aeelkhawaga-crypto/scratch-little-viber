@@ -702,17 +702,18 @@ class Blocks extends React.Component {
     }
     sanitizeAiContent(content) {
         if (!content) return '';
-        let cleaned = content.trim();
-        // If wrapped in a code fence (with or without a language), strip it.
+        // Strip DeepSeek-style <think>...</think> reasoning blocks
+        let cleaned = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        // Strip markdown code fences
         const fencedMatch = cleaned.match(/^```[^\n]*\n([\s\S]*?)```$/);
         if (fencedMatch && fencedMatch[1]) {
             cleaned = fencedMatch[1].trim();
         } else {
-            cleaned = cleaned
-                .replace(/^```[^\n]*\n?/, '') // leading fence
-                .replace(/```$/, '') // trailing fence
-                .trim();
+            cleaned = cleaned.replace(/^```[^\n]*\n?/, '').replace(/```$/, '').trim();
         }
+        // Extract just the <xml>...</xml> block if present
+        const xmlMatch = cleaned.match(/<xml[\s\S]*<\/xml>/i);
+        if (xmlMatch) return xmlMatch[0].trim();
         return cleaned;
     }
     async handleVibeAiGenerate() {

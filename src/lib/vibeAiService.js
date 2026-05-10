@@ -2,16 +2,18 @@ import chatManager from './chatManager';
 
 const sanitizeAiContent = content => {
   if (!content) return '';
-  let cleaned = content.trim();
+  // Strip DeepSeek-style <think>...</think> reasoning blocks
+  let cleaned = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  // Strip markdown code fences
   const fencedMatch = cleaned.match(/^```[^\n]*\n([\s\S]*?)```$/);
   if (fencedMatch && fencedMatch[1]) {
     cleaned = fencedMatch[1].trim();
   } else {
-    cleaned = cleaned
-      .replace(/^```[^\n]*\n?/, '')
-      .replace(/```$/, '')
-      .trim();
+    cleaned = cleaned.replace(/^```[^\n]*\n?/, '').replace(/```$/, '').trim();
   }
+  // Extract just the <xml>...</xml> block if present
+  const xmlMatch = cleaned.match(/<xml[\s\S]*<\/xml>/i);
+  if (xmlMatch) return xmlMatch[0].trim();
   return cleaned;
 };
 
@@ -40,14 +42,11 @@ export async function generateVibeXml({
     model: model
   });
 
-  const userPayload = {
-    prompt: currentXml,
-    request: prompt
-  };
+  const message = currentXml
+    ? `Here is the current Scratch XML:\n${currentXml}\n\nUser request: ${prompt}`
+    : `User request: ${prompt}`;
 
-  const result = await chat.sendMessage({
-    message: JSON.stringify(userPayload)
-  });
+  const result = await chat.sendMessage({ message });
 
   const content = extractTextFromResponse(result);
   if (!content) throw new Error('No content returned from AI.');
