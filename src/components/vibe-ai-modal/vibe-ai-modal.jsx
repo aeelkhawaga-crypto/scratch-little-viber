@@ -6,6 +6,19 @@ import Box from '../box/box.jsx';
 
 import styles from './vibe-ai-modal.css';
 
+// Available models for code generation tasks
+const AVAILABLE_MODELS = [
+    { id: 'meta-llama/Llama-3.2-3B-Instruct', name: 'Llama 3.2 3B Instruct' },
+    { id: 'meta-llama/Llama-3.1-8B-Instruct', name: 'Llama 3.1 8B Instruct' },
+    { id: 'meta-llama/Llama-3.1-70B-Instruct', name: 'Llama 3.1 70B Instruct' },
+    { id: 'mistralai/Mistral-7B-Instruct-v0.3', name: 'Mistral 7B Instruct v0.3' },
+    { id: 'mistralai/Mixtral-8x7B-Instruct-v0.1', name: 'Mixtral 8x7B Instruct' },
+    { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B Instruct' },
+    { id: 'Qwen/Qwen2.5-Coder-32B-Instruct', name: 'Qwen 2.5 Coder 32B' },
+    { id: 'deepseek-ai/DeepSeek-R1-Distill-Qwen-32B', name: 'DeepSeek R1 Distill 32B' },
+    { id: 'microsoft/Phi-3-mini-4k-instruct', name: 'Phi-3 Mini 4K Instruct' }
+];
+
 const VibeAiModal = ({
     onCancel,
     onGenerate,
@@ -17,6 +30,8 @@ const VibeAiModal = ({
     xmlText,
     errorMessage,
     loading,
+    selectedModel,
+    onModelChange,
     blocksPreviewRef,
     onBlocksZoomIn,
     onBlocksZoomOut,
@@ -31,6 +46,23 @@ const VibeAiModal = ({
             onRequestClose={handleClose}
         >
             <Box className={styles.body}>
+                <div className={styles.apiKeyRow}>
+                    <label className={styles.apiKeyLabel} htmlFor="vibeAiModel">
+                        Select AI Model
+                    </label>
+                    <select
+                        id="vibeAiModel"
+                        className={styles.apiKeyInput}
+                        value={selectedModel}
+                        onChange={onModelChange}
+                    >
+                        {AVAILABLE_MODELS.map(model => (
+                            <option key={model.id} value={model.id}>
+                                {model.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
                 {loading ? (
                     <div className={styles.loadingMessage}>
                         <span className={styles.loadingText}>The viber is thinking</span>
@@ -127,6 +159,8 @@ VibeAiModal.propTypes = {
     onTest: PropTypes.func.isRequired,
     promptValue: PropTypes.string,
     onXmlChange: PropTypes.func.isRequired,
+    selectedModel: PropTypes.string,
+    onModelChange: PropTypes.func.isRequired,
     errorMessage: PropTypes.string,
     xmlText: PropTypes.string,
     loading: PropTypes.bool,
