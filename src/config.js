@@ -1,5 +1,35 @@
+// Resolve HF token in multiple environments:
+// 1. If running under Node/webpack with DefinePlugin, process.env.HF_TOKEN will be available.
+// 2. If running in the browser dev server, allow a global `window.__ENV && window.__ENV.HF_TOKEN` fallback.
+const resolveHfToken = () => {
+  try {
+    if (typeof process !== 'undefined' && process && process.env && process.env.HF_TOKEN) {
+      return process.env.HF_TOKEN;
+    }
+  } catch (e) {
+    // ignore
+  }
+  try {
+    if (typeof window !== 'undefined' && window.__ENV && window.__ENV.HF_TOKEN) {
+      return window.__ENV.HF_TOKEN;
+    }
+  } catch (e) {
+    // ignore
+  }
+  // Optional: try localStorage (developer convenience)
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const v = window.localStorage.getItem('HF_TOKEN');
+      if (v) return v;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return '';
+};
+
 const config = {
-  huggingFaceToken: process.env.HF_TOKEN || '',
+  huggingFaceToken: resolveHfToken(),
   huggingFaceModel: 'meta-llama/Llama-3.2-3B-Instruct',
   systemInstruction: `
 You are an engine that converts natural-language instructions into Scratch 3.0 XML.
