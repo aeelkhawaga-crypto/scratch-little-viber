@@ -16,6 +16,7 @@ import extensionData from '../lib/libraries/extensions/index.jsx';
 import CustomProcedures from './custom-procedures.jsx';
 import errorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
 import { generateVibeXml } from '../lib/vibeAiService';
+import config from '../config';
 import { BLOCKS_DEFAULT_SCALE, STAGE_DISPLAY_SIZES } from '../lib/layout-constants';
 import DropAreaHOC from '../lib/drop-area-hoc.jsx';
 import DragConstants from '../lib/drag-constants';
@@ -106,7 +107,7 @@ class Blocks extends React.Component {
             vibeAiPrompt: 'Make the cat move 10 steos when the green flag is clicked.',
             vibeAiError: '',
             vibeAiLoading: false,
-            vibeAiSelectedModel: 'meta-llama/Llama-3.2-3B-Instruct'
+            vibeAiSelectedModel: config.huggingFaceModel
         };
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.toolboxUpdateQueue = [];
