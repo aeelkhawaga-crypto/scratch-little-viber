@@ -1,8 +1,5 @@
 # scratch-gui
 
-## **⚠️ NOTICE: Repository Migration to Mono-Repo ⚠️**
-
-The Scratch Team has migrated the `scratch-gui` module into a new mono-repo,
 # scratch-little-viber (Vibe Coding)
 
 This repository is a fork of the Scratch GUI interface with a focused addition: "Little Viber" — an AI-powered
