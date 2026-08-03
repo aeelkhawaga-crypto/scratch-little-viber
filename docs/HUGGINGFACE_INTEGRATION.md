@@ -139,6 +139,8 @@ The modal interface for AI code generation.
 | `Qwen/Qwen2.5-Coder-32B-Instruct` | Qwen 2.5 Coder 32B |
 | `deepseek-ai/DeepSeek-R1-Distill-Qwen-32B` | DeepSeek R1 Distill 32B |
 | `microsoft/Phi-3-mini-4k-instruct` | Phi-3 Mini 4K Instruct |
+| `moonshotai/Kimi-K3:together` | Kimi K3 (Together) |
+| `deepseek-ai/DeepSeek-V4-Flash-0731:novita` | DeepSeek V4 Flash 0731 (Novita) |
 
 ## Setup Instructions
 

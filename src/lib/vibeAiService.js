@@ -1,5 +1,7 @@
 import chatManager from './chatManager';
 
+export const startVibeExperiment = () => chatManager.startConversation();
+
 const sanitizeAiContent = content => {
   if (!content) return '';
   // Strip DeepSeek-style <think>...</think> reasoning blocks
@@ -50,5 +52,8 @@ export async function generateVibeXml({
 
   const content = extractTextFromResponse(result);
   if (!content) throw new Error('No content returned from AI.');
-  return sanitizeAiContent(content);
+  return {
+    xml: sanitizeAiContent(content),
+    requestId: result.requestId || chat.lastRequestId
+  };
 }

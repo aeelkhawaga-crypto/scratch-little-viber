@@ -1,0 +1,59 @@
+.feedbackTrigger {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 20;
+    border: 1px solid #4c97ff;
+    border-radius: 1rem;
+    padding: 0.45rem 0.8rem;
+    background: #fff;
+    color: #2b7be8;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.feedbackModal {
+    width: 860px;
+    max-width: 90vw;
+    margin: 12vh auto;
+}
+
+.feedbackLayout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; }
+
+.feedbackBody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 1.5rem;
+    background: #fff;
+}
+
+.feedbackBody h2 { margin: 0 0 0.5rem; }
+.feedbackBody select,
+.feedbackBody textarea { padding: 0.55rem; border: 1px solid #ccd3dd; border-radius: 5px; }
+.feedbackBody textarea { min-height: 90px; resize: vertical; }
+.actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem; }
+.actions button { padding: 0.55rem 0.8rem; border: 1px solid #ccd3dd; border-radius: 5px; cursor: pointer; }
+.actions button:last-child { background: #4c97ff; color: #fff; border-color: #4c97ff; }
+.error { color: #b00020; }
+.saved { color: #187a3d; }
+
+.criteriaPanel {
+    max-height: 70vh;
+    overflow: auto;
+    padding: 1.25rem;
+    background: #f5f7fb;
+    border-left: 1px solid #dce2eb;
+}
+
+.criteriaPanel h3 { margin: 0 0 1rem; }
+.criteriaPanel h4 { margin: 1rem 0 0.45rem; }
+.criteriaPanel h4 span { float: right; color: #2b7be8; }
+.criterion { display: flex; gap: 0.45rem; align-items: flex-start; margin: 0.4rem 0; font-size: 0.82rem; line-height: 1.25; cursor: pointer; }
+.criterion input { margin-top: 0.15rem; accent-color: #4c97ff; }
+
+@media (max-width: 720px) {
+    .feedbackLayout { grid-template-columns: 1fr; }
+    .criteriaPanel { border-left: 0; border-top: 1px solid #dce2eb; max-height: 40vh; }
+}

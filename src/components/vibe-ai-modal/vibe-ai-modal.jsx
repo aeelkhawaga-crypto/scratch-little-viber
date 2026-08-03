@@ -11,7 +11,9 @@ const AVAILABLE_MODELS = [
     { id: 'meta-llama/Llama-3.3-70B-Instruct', name: 'Llama 3.3 70B Instruct (Recommended)' },
     { id: 'meta-llama/Llama-3.1-70B-Instruct', name: 'Llama 3.1 70B Instruct' },
     { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B Instruct' },
-    { id: 'Qwen/Qwen2.5-Coder-32B-Instruct', name: 'Qwen 2.5 Coder 32B' }];
+    { id: 'Qwen/Qwen2.5-Coder-32B-Instruct', name: 'Qwen 2.5 Coder 32B' },
+    { id: 'moonshotai/Kimi-K3:together', name: 'Kimi K3 (Together)' },
+    { id: 'deepseek-ai/DeepSeek-V4-Flash-0731:novita', name: 'DeepSeek V4 Flash 0731 (Novita)' }];
 
 const VibeAiModal = ({
     onCancel,

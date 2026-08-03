@@ -11,11 +11,12 @@ import log from '../lib/log.js';
 import Prompt from './prompt.jsx';
 import BlocksComponent from '../components/blocks/blocks.jsx';
 import VibeAiModal from '../components/vibe-ai-modal/vibe-ai-modal.jsx';
+import VibeFeedback from '../components/vibe-feedback/vibe-feedback.jsx';
 import ExtensionLibrary from './extension-library.jsx';
 import extensionData from '../lib/libraries/extensions/index.jsx';
 import CustomProcedures from './custom-procedures.jsx';
 import errorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
-import { generateVibeXml } from '../lib/vibeAiService';
+import { generateVibeXml, startVibeExperiment } from '../lib/vibeAiService';
 import config from '../config';
 import { BLOCKS_DEFAULT_SCALE, STAGE_DISPLAY_SIZES } from '../lib/layout-constants';
 import DropAreaHOC from '../lib/drop-area-hoc.jsx';
@@ -107,7 +108,9 @@ class Blocks extends React.Component {
             vibeAiPrompt: 'Make the cat move 10 steos when the green flag is clicked.',
             vibeAiError: '',
             vibeAiLoading: false,
-            vibeAiSelectedModel: config.huggingFaceModel
+            vibeAiSelectedModel: config.huggingFaceModel,
+            vibeAiExperimentId: null,
+            vibeAiInserted: false
         };
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.toolboxUpdateQueue = [];
@@ -582,13 +585,18 @@ class Blocks extends React.Component {
             });
     }
     openVibeAiModal() {
+        // A new Do Magic session is a new experiment. Keep related retries
+        // within this modal, but never resend history from older experiments.
+        startVibeExperiment();
         const vibeAiXmlText = this.getWorkspaceXmlText();
         this.setState({
             vibeAiModalOpen: true,
             vibeAiXmlText,
             vibeAiPrompt: '',
             vibeAiError: '',
-            vibeAiLoading: false
+            vibeAiLoading: false,
+            vibeAiExperimentId: null,
+            vibeAiInserted: false
         }, () => {
             this.initializeVibeBlocksWorkspace();
             this.refreshVibeBlocksPreview(vibeAiXmlText);
@@ -732,8 +740,9 @@ class Blocks extends React.Component {
                 currentXml: xmlText,
                 model: selectedModel
             });
-            const cleaned = this.sanitizeAiContent(aiResponse);
+            const cleaned = this.sanitizeAiContent(aiResponse.xml);
             this.setState({ vibeAiXmlText: cleaned });
+            this.setState({vibeAiExperimentId: aiResponse.requestId || null});
             this.initializeVibeBlocksWorkspace();
             this.refreshVibeBlocksPreview(cleaned);
         } catch (err) {
@@ -766,7 +775,7 @@ class Blocks extends React.Component {
             this.props.vm.refreshWorkspace();
             this.updateToolbox();
             // Normalize and reflect the current workspace XML back into the modal.
-            this.setState({ vibeAiXmlText: this.getWorkspaceXmlText() });
+            this.setState({ vibeAiXmlText: this.getWorkspaceXmlText(), vibeAiInserted: true });
             this.closeVibeAiModal();
         } catch (e) {
             log.warn('Failed to insert XML into workspace', e);
@@ -887,6 +896,9 @@ class Blocks extends React.Component {
                     onDrop={this.handleDrop}
                     {...props}
                 />
+                {this.state.vibeAiExperimentId && this.state.vibeAiInserted && !this.state.vibeAiModalOpen ? (
+                    <VibeFeedback requestId={this.state.vibeAiExperimentId} />
+                ) : null}
                 {this.state.prompt ? (
                     <Prompt
                         defaultValue={this.state.prompt.defaultValue}

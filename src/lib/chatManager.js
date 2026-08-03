@@ -1,6 +1,9 @@
 import config from '../config';
 
 const PROXY_URL = 'http://localhost:3456/chat';
+const KIMI_K3_MODEL = 'moonshotai/Kimi-K3:together';
+const DEEPSEEK_V4_FLASH_MODEL = 'deepseek-ai/DeepSeek-V4-Flash-0731:novita';
+const REASONING_MODELS = new Set([KIMI_K3_MODEL, DEEPSEEK_V4_FLASH_MODEL]);
 
 class ChatManager {
   constructor() {
@@ -8,6 +11,8 @@ class ChatManager {
     this.model = null;
     this.systemInstruction = null;
     this.conversationHistory = [];
+    this.lastAssistantMessage = null;
+    this.lastRequestId = null;
   }
 
   getChat({ key, model, systemInstruction } = {}) {
@@ -28,6 +33,8 @@ class ChatManager {
     this.model = resolvedModel;
     this.systemInstruction = resolvedSystemInstruction;
     this.conversationHistory = [];
+    this.lastAssistantMessage = null;
+    this.lastRequestId = null;
 
     return this;
   }
@@ -57,7 +64,8 @@ class ChatManager {
         model: this.model,
         messages: messages,
         max_tokens: 4096,
-        temperature: 0.1
+        temperature: 0.1,
+        ...(REASONING_MODELS.has(this.model) ? {reasoning_effort: 'low'} : {})
       })
     });
 
@@ -70,17 +78,30 @@ class ChatManager {
     }
 
     const data = await response.json();
-    const assistantMessage = data.choices[0].message.content;
+    this.lastRequestId = response.headers.get('X-Request-ID');
+    const assistantMessage = data.choices && data.choices[0] && data.choices[0].message;
+    const assistantContent = assistantMessage && assistantMessage.content;
+    if (!assistantMessage || !assistantContent) {
+      throw new Error('The selected model returned no usable XML content. Try another model or simplify the request.');
+    }
 
     // Update conversation history
     this.conversationHistory.push({ role: 'user', content: message });
-    this.conversationHistory.push({ role: 'assistant', content: assistantMessage });
+    this.conversationHistory.push(assistantMessage);
+    this.lastAssistantMessage = assistantMessage;
 
     return {
+      requestId: this.lastRequestId,
       response: {
-        text: () => assistantMessage
+        text: () => assistantContent
       }
     };
+  }
+
+  startConversation() {
+    this.conversationHistory = [];
+    this.lastAssistantMessage = null;
+    this.lastRequestId = null;
   }
 
   reset() {
@@ -88,6 +109,8 @@ class ChatManager {
     this.model = null;
     this.systemInstruction = null;
     this.conversationHistory = [];
+    this.lastAssistantMessage = null;
+    this.lastRequestId = null;
   }
 }
 
