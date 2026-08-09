@@ -171,3 +171,7 @@ docker compose --env-file .env.production down
 ```
 
 Never add `--volumes` unless the PostgreSQL and Caddy volumes are intentionally being deleted and a verified backup exists.
+
+## Existing host Nginx
+
+When ports 80 and 443 are already owned by host Nginx, use `compose.nginx.yaml`. It serves a prebuilt `build/` directory through an internal Caddy container bound only to `127.0.0.1:3458`; PostgreSQL and the API remain private in Docker. Add a separate Nginx virtual host that proxies to `http://127.0.0.1:3458`, protect it with authentication, and let Certbot add TLS. Validate with `nginx -t` before every reload. This mode avoids replacing existing web services and also avoids compiling the memory-intensive Scratch frontend on a small production VM.

@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-scratch_viber}
+      POSTGRES_USER: ${POSTGRES_USER:-scratch_viber}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/hf-telemetry.sql:/docker-entrypoint-initdb.d/001-hf-telemetry.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3456
+      HF_TOKEN: ${HF_TOKEN:?Set HF_TOKEN in .env.production}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-scratch_viber}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-scratch_viber}
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "3456"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3456/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  web:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3458}:80"
+    volumes:
+      - ./build:/srv:ro
+      - ./deploy/Caddyfile.internal:/etc/caddy/Caddyfile:ro
+
+volumes:
+  postgres_data:
