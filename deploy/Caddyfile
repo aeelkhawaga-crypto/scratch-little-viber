@@ -1,5 +1,6 @@
 {$DOMAIN} {
     encode zstd gzip
+    header Cache-Control "no-cache"
 
     basic_auth {
         {$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}

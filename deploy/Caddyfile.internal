@@ -1,5 +1,6 @@
 :80 {
     encode zstd gzip
+    header Cache-Control "no-cache"
 
     handle_path /api/* {
         reverse_proxy api:3456
