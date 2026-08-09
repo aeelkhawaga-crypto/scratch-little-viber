@@ -10,6 +10,10 @@ const ScratchWebpackConfigBuilder = require('scratch-webpack-configuration');
 
 // const STATIC_PATH = process.env.STATIC_PATH || '/static';
 
+// Some shells use DEBUG for unrelated values such as "release". Only explicit
+// opt-in values should enable Box's random-color layout diagnostics.
+const debugEnabled = ['1', 'true', 'yes'].includes(String(process.env.DEBUG || '').trim().toLowerCase());
+
 const commonHtmlWebpackPluginOptions = {
     // Google Tag Manager ID
     // Looks like 'GTM-XXXXXXX'
@@ -51,7 +55,7 @@ const baseConfig = new ScratchWebpackConfigBuilder(
         type: 'asset' // let webpack decide on the best type of asset
     })
     .addPlugin(new webpack.DefinePlugin({
-        'process.env.DEBUG': Boolean(process.env.DEBUG),
+        'process.env.DEBUG': debugEnabled,
         'process.env.GA_ID': `"${process.env.GA_ID || 'UA-000000-01'}"`,
         'process.env.GTM_ENV_AUTH': `"${process.env.GTM_ENV_AUTH || ''}"`,
         'process.env.GTM_ID': process.env.GTM_ID ? `"${process.env.GTM_ID}"` : null,
