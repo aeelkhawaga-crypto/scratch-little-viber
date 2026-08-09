@@ -2,18 +2,11 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import Modal from '../../containers/modal.jsx';
+import VIBE_MODELS from '../../lib/vibeModels';
 import Box from '../box/box.jsx';
+import VibeFeedback from '../vibe-feedback/vibe-feedback.jsx';
 
 import styles from './vibe-ai-modal.css';
-
-// Available models for code generation tasks
-const AVAILABLE_MODELS = [
-    { id: 'meta-llama/Llama-3.3-70B-Instruct', name: 'Llama 3.3 70B Instruct (Recommended)' },
-    { id: 'meta-llama/Llama-3.1-70B-Instruct', name: 'Llama 3.1 70B Instruct' },
-    { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B Instruct' },
-    { id: 'Qwen/Qwen2.5-Coder-32B-Instruct', name: 'Qwen 2.5 Coder 32B' },
-    { id: 'moonshotai/Kimi-K3:together', name: 'Kimi K3 (Together)' },
-    { id: 'deepseek-ai/DeepSeek-V4-Flash-0731:novita', name: 'DeepSeek V4 Flash 0731 (Novita)' }];
 
 const VibeAiModal = ({
     onCancel,
@@ -31,7 +24,9 @@ const VibeAiModal = ({
     blocksPreviewRef,
     onBlocksZoomIn,
     onBlocksZoomOut,
-    onBlocksFit
+    onBlocksFit,
+    feedbackRequestId,
+    onFreshStart
 }) => {
     const handleClose = () => onCancel();
     return (
@@ -52,12 +47,17 @@ const VibeAiModal = ({
                         value={selectedModel}
                         onChange={onModelChange}
                     >
-                        {AVAILABLE_MODELS.map(model => (
+                        {VIBE_MODELS.map(model => (
                             <option key={model.id} value={model.id}>
                                 {model.name}
                             </option>
                         ))}
                     </select>
+                    <VibeFeedback
+                        inline
+                        requestId={feedbackRequestId}
+                        model={selectedModel}
+                    />
                 </div>
                 {loading ? (
                     <div className={styles.loadingMessage}>
@@ -132,6 +132,9 @@ const VibeAiModal = ({
                     {/* <button className={styles.secondaryButton} type="button" onClick={onTest}>
                         Test
                     </button> */}
+                    <button className={styles.secondaryButton} type="button" onClick={onFreshStart}>
+                        Start over
+                    </button>
                     <button className={styles.primaryButton} type="button" onClick={onGenerate} disabled={loading}>
                         Scoopy Doo
                     </button>
@@ -163,7 +166,9 @@ VibeAiModal.propTypes = {
     blocksPreviewRef: PropTypes.func.isRequired,
     onBlocksZoomIn: PropTypes.func.isRequired,
     onBlocksZoomOut: PropTypes.func.isRequired,
-    onBlocksFit: PropTypes.func.isRequired
+    onBlocksFit: PropTypes.func.isRequired,
+    feedbackRequestId: PropTypes.string,
+    onFreshStart: PropTypes.func.isRequired
 };
 
 export default VibeAiModal;

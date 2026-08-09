@@ -1,8 +1,14 @@
+/* eslint-disable react/jsx-handler-names, react/jsx-max-props-per-line, react/jsx-no-bind, react/jsx-no-literals */
 import PropTypes from 'prop-types';
 import React from 'react';
 
 import Modal from '../../containers/modal.jsx';
-import {saveVibeFeedback} from '../../lib/vibeFeedbackService';
+import {
+    loadVibeExperiments,
+    saveVibeFeedback,
+    updateVibeExperiment
+} from '../../lib/vibeFeedbackService';
+import VIBE_MODELS from '../../lib/vibeModels';
 import styles from './vibe-feedback.css';
 
 const RUBRICS = {
@@ -29,83 +35,242 @@ const RUBRICS = {
 };
 
 class VibeFeedback extends React.Component {
-    constructor(props) {
+    constructor (props) {
         super(props);
         this.state = {
             open: false,
+            model: props.model || '',
+            minutes: 30,
+            records: [],
+            selectedRequestId: '',
+            prompt: '',
+            response: '',
+            difficulty: 'Easy',
             functionalCorrectness: 5,
             intentAlignment: 5,
             outcome: 'Worked',
             notes: '',
+            loadingRecords: false,
             saving: false,
             error: '',
             saved: false
         };
     }
 
-    open = () => this.setState({open: true, error: '', saved: false});
+    open = () => {
+        this.setState({
+            open: true,
+            model: this.props.model || this.state.model,
+            error: '',
+            saved: false
+        }, this.loadDataset);
+    };
     close = () => this.setState({open: false});
     selectCriterion = (dimension, value, event) => {
-        if (event.target.checked) {
-            this.setState({[dimension]: value});
+        if (event.target.checked) this.setState({[dimension]: value});
+    };
+    selectRecord = record => {
+        this.setState({
+            selectedRequestId: record.request_id,
+            prompt: record.prompt || '',
+            response: record.response || '',
+            difficulty: record.difficulty || 'Easy',
+            functionalCorrectness: record.functional_correctness || 5,
+            intentAlignment: record.intent_alignment || 5,
+            outcome: record.outcome || (record.status === 'success' ? 'Worked' : 'Did not work'),
+            notes: record.feedback_notes || '',
+            error: '',
+            saved: false
+        });
+    };
+    loadDataset = async () => {
+        const {model, minutes} = this.state;
+        if (!model) return;
+        this.setState({loadingRecords: true, error: '', saved: false});
+        try {
+            const records = await loadVibeExperiments({model, minutes});
+            this.setState({records, loadingRecords: false});
+            const preferredId = this.props.requestId || this.state.selectedRequestId;
+            const selected = records.find(record => record.request_id === preferredId) || records[0];
+            if (selected) {
+                this.selectRecord(selected);
+            } else {
+                this.setState({
+                    selectedRequestId: '',
+                    prompt: '',
+                    response: '',
+                    error: 'No experiments found for this model in that time window.'
+                });
+            }
+        } catch (error) {
+            this.setState({loadingRecords: false, error: error.message});
         }
     };
     save = async event => {
         event.preventDefault();
-        this.setState({saving: true, error: ''});
+        const requestId = this.state.selectedRequestId || this.props.requestId;
+        if (!requestId) {
+            this.setState({error: 'Select an experiment before saving feedback.'});
+            return;
+        }
+        this.setState({saving: true, error: '', saved: false});
+        const feedback = {
+            requestId,
+            functionalCorrectness: this.state.functionalCorrectness,
+            intentAlignment: this.state.intentAlignment,
+            outcome: this.state.outcome,
+            notes: this.state.notes,
+            difficulty: this.state.difficulty
+        };
         try {
-            await saveVibeFeedback({
-                requestId: this.props.requestId,
-                functionalCorrectness: this.state.functionalCorrectness,
-                intentAlignment: this.state.intentAlignment,
-                outcome: this.state.outcome,
-                notes: this.state.notes
-            });
+            if (this.state.selectedRequestId) {
+                const updated = await updateVibeExperiment({
+                    ...feedback,
+                    prompt: this.state.prompt,
+                    response: this.state.response
+                });
+                this.setState(state => ({
+                    records: state.records.map(record => (
+                        record.request_id === updated.request_id ? updated : record
+                    ))
+                }));
+            } else {
+                await saveVibeFeedback(feedback);
+            }
             this.setState({saving: false, saved: true});
         } catch (error) {
             this.setState({saving: false, error: error.message});
         }
     };
 
-    render() {
-        const {open, functionalCorrectness, intentAlignment, outcome, notes, saving, error, saved} = this.state;
+    render () {
+        const {
+            open, model, minutes, records, selectedRequestId, prompt, response, difficulty,
+            functionalCorrectness, intentAlignment, outcome, notes, loadingRecords,
+            saving, error, saved
+        } = this.state;
         const scores = {functional: functionalCorrectness, intent: intentAlignment};
+        const modelChoices = VIBE_MODELS;
         return (
             <React.Fragment>
-                <button className={styles.feedbackTrigger} type="button" onClick={this.open}>
-                    Feedback
+                <button
+                    className={this.props.inline ? styles.feedbackInline : styles.feedbackTrigger}
+                    type="button"
+                    onClick={this.open}
+                >
+                    Submit feedback
                 </button>
                 {open ? (
                     <Modal
+                        id="vibeFeedbackModal"
                         className={styles.feedbackModal}
-                        contentLabel="Rate Viber experiment"
+                        contentLabel="Manage Viber experiment dataset"
+                        fullScreen
                         onRequestClose={this.close}
                     >
                         <div className={styles.feedbackLayout}>
                             <form className={styles.feedbackBody} onSubmit={this.save}>
-                                <h2>Rate this experiment</h2>
-                                <label htmlFor="vibeFunctionalCorrectness">Functional correctness score</label>
-                                <select
-                                    id="vibeFunctionalCorrectness"
-                                    value={functionalCorrectness}
-                                    onChange={event => this.setState({functionalCorrectness: Number(event.target.value)})}
-                                >
-                                    {[1, 2, 3, 4, 5].map(value => <option key={value} value={value}>{value} / 5</option>)}
-                                </select>
-                                <label htmlFor="vibeIntentAlignment">Intent alignment score</label>
-                                <select
-                                    id="vibeIntentAlignment"
-                                    value={intentAlignment}
-                                    onChange={event => this.setState({intentAlignment: Number(event.target.value)})}
-                                >
-                                    {[1, 2, 3, 4, 5].map(value => <option key={value} value={value}>{value} / 5</option>)}
-                                </select>
-                                <label htmlFor="vibeOutcome">Outcome</label>
-                                <select id="vibeOutcome" value={outcome} onChange={event => this.setState({outcome: event.target.value})}>
-                                    <option>Worked</option>
-                                    <option>Partially worked</option>
-                                    <option>Did not work</option>
-                                </select>
+                                <h2>Experiment dataset</h2>
+                                <div className={styles.filters}>
+                                    <label htmlFor="vibeDatasetModel">
+                                        Model
+                                        <select
+                                            id="vibeDatasetModel"
+                                            value={model}
+                                            onChange={event => this.setState({model: event.target.value})}
+                                        >
+                                            {modelChoices.map(option => (
+                                                <option key={option.id} value={option.id}>{option.name}</option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                    <label htmlFor="vibeDatasetMinutes">
+                                        Last X minutes
+                                        <input
+                                            id="vibeDatasetMinutes"
+                                            type="number"
+                                            min="1"
+                                            value={minutes}
+                                            onChange={event => this.setState({minutes: Number(event.target.value)})}
+                                        />
+                                    </label>
+                                    <button type="button" onClick={this.loadDataset} disabled={loadingRecords}>
+                                        {loadingRecords ? 'Loading…' : 'Load results'}
+                                    </button>
+                                </div>
+                                <div className={styles.recordSummary}>
+                                    {records.length} experiment{records.length === 1 ? '' : 's'} loaded
+                                    {selectedRequestId ? ` · Editing ${selectedRequestId}` : ''}
+                                </div>
+                                <label htmlFor="vibeDatasetPrompt">Prompt</label>
+                                <textarea
+                                    id="vibeDatasetPrompt"
+                                    value={prompt}
+                                    onChange={event => this.setState({prompt: event.target.value})}
+                                    placeholder="Select a recorded experiment to edit its prompt."
+                                />
+                                <label htmlFor="vibeDatasetResponse">Model result</label>
+                                <textarea
+                                    id="vibeDatasetResponse"
+                                    className={styles.responseEditor}
+                                    value={response}
+                                    onChange={event => this.setState({response: event.target.value})}
+                                    placeholder="The raw model result, including unusable output, appears here."
+                                />
+                                <div className={styles.scoreFields}>
+                                    <label htmlFor="vibeFunctionalCorrectness">
+                                        Functional correctness
+                                        <select
+                                            id="vibeFunctionalCorrectness"
+                                            value={functionalCorrectness}
+                                            onChange={event => this.setState({
+                                                functionalCorrectness: Number(event.target.value)
+                                            })}
+                                        >
+                                            {[1, 2, 3, 4, 5].map(value => (
+                                                <option key={value} value={value}>{value} / 5</option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                    <label htmlFor="vibeIntentAlignment">
+                                        Intent alignment
+                                        <select
+                                            id="vibeIntentAlignment"
+                                            value={intentAlignment}
+                                            onChange={event => this.setState({
+                                                intentAlignment: Number(event.target.value)
+                                            })}
+                                        >
+                                            {[1, 2, 3, 4, 5].map(value => (
+                                                <option key={value} value={value}>{value} / 5</option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                    <label htmlFor="vibeOutcome">
+                                        Outcome
+                                        <select
+                                            id="vibeOutcome"
+                                            value={outcome}
+                                            onChange={event => this.setState({outcome: event.target.value})}
+                                        >
+                                            <option>Worked</option>
+                                            <option>Partially worked</option>
+                                            <option>Did not work</option>
+                                        </select>
+                                    </label>
+                                    <label htmlFor="vibeDifficulty">
+                                        Difficulty
+                                        <select
+                                            id="vibeDifficulty"
+                                            value={difficulty}
+                                            onChange={event => this.setState({difficulty: event.target.value})}
+                                        >
+                                            <option>Easy</option>
+                                            <option>Medium</option>
+                                            <option>Hard</option>
+                                        </select>
+                                    </label>
+                                </div>
                                 <label htmlFor="vibeFeedbackNotes">Notes (optional)</label>
                                 <textarea
                                     id="vibeFeedbackNotes"
@@ -114,14 +279,35 @@ class VibeFeedback extends React.Component {
                                     placeholder="What worked or needs improvement?"
                                 />
                                 {error ? <div className={styles.error}>{error}</div> : null}
-                                {saved ? <div className={styles.saved}>Feedback saved.</div> : null}
+                                {saved ? <div className={styles.saved}>Dataset changes and feedback saved.</div> : null}
                                 <div className={styles.actions}>
                                     <button type="button" onClick={this.close}>Close</button>
-                                    <button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save feedback'}</button>
+                                    <button type="submit" disabled={saving || !selectedRequestId}>
+                                        {saving ? 'Saving…' : 'Save changes & feedback'}
+                                    </button>
                                 </div>
                             </form>
                             <aside className={styles.criteriaPanel}>
-                                <h3>Scoring guide</h3>
+                                <h3>Loaded experiments</h3>
+                                <div className={styles.recordList}>
+                                    {records.map(record => (
+                                        <button
+                                            key={record.request_id}
+                                            type="button"
+                                            className={record.request_id === selectedRequestId ?
+                                                styles.selectedRecord : ''}
+                                            onClick={() => this.selectRecord(record)}
+                                        >
+                                            <strong>{new Date(record.created_at).toLocaleString()}</strong>
+                                            <span>
+                                                <b className={styles.difficulty}>{record.difficulty || 'Easy'}</b>
+                                                {' · '}{record.status}{record.error ? ` · ${record.error}` : ''}
+                                            </span>
+                                            <span>{(record.prompt || '(empty prompt)').slice(0, 100)}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <h3 className={styles.guideTitle}>Scoring guide</h3>
                                 {Object.keys(RUBRICS).map(dimension => (
                                     <section key={dimension}>
                                         <h4>{RUBRICS[dimension].title} <span>{scores[dimension]}/5</span></h4>
@@ -133,7 +319,8 @@ class VibeFeedback extends React.Component {
                                                         type="checkbox"
                                                         checked={scores[dimension] === value}
                                                         onChange={event => this.selectCriterion(
-                                                            dimension === 'functional' ? 'functionalCorrectness' : 'intentAlignment',
+                                                            dimension === 'functional' ?
+                                                                'functionalCorrectness' : 'intentAlignment',
                                                             value,
                                                             event
                                                         )}
@@ -154,7 +341,15 @@ class VibeFeedback extends React.Component {
 }
 
 VibeFeedback.propTypes = {
-    requestId: PropTypes.string.isRequired
+    requestId: PropTypes.string,
+    inline: PropTypes.bool,
+    model: PropTypes.string
+};
+
+VibeFeedback.defaultProps = {
+    requestId: null,
+    inline: false,
+    model: ''
 };
 
 export default VibeFeedback;

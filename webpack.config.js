@@ -54,8 +54,8 @@ const baseConfig = new ScratchWebpackConfigBuilder(
         'process.env.DEBUG': Boolean(process.env.DEBUG),
         'process.env.GA_ID': `"${process.env.GA_ID || 'UA-000000-01'}"`,
         'process.env.GTM_ENV_AUTH': `"${process.env.GTM_ENV_AUTH || ''}"`,
-        'process.env.GTM_ID': process.env.GTM_ID ? `"${process.env.GTM_ID}"` : null
-        , 'process.env.HF_TOKEN': process.env.HF_TOKEN ? `"${process.env.HF_TOKEN}"` : '""'
+        'process.env.GTM_ID': process.env.GTM_ID ? `"${process.env.GTM_ID}"` : null,
+        'process.env.API_BASE_URL': `"${process.env.API_BASE_URL || 'http://localhost:3456'}"`
     }))
     .addPlugin(new CopyWebpackPlugin({
         patterns: [

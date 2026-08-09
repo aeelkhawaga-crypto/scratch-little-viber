@@ -1,0 +1,10 @@
+{
+  "name": "scratch-viber-api",
+  "version": "1.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "dependencies": {
+    "dotenv": "17.4.2",
+    "pg": "8.22.0"
+  }
+}

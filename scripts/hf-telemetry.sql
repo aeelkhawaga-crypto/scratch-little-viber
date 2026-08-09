@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS hf_requests (
     intent_alignment INTEGER,
     outcome TEXT,
     feedback_notes TEXT,
-    feedback_created_at TIMESTAMPTZ
+    feedback_created_at TIMESTAMPTZ,
+    difficulty TEXT,
+    experiment_id TEXT
 );
 
 ALTER TABLE hf_requests
@@ -30,8 +32,12 @@ ALTER TABLE hf_requests
     ADD COLUMN IF NOT EXISTS intent_alignment INTEGER,
     ADD COLUMN IF NOT EXISTS outcome TEXT,
     ADD COLUMN IF NOT EXISTS feedback_notes TEXT,
-    ADD COLUMN IF NOT EXISTS feedback_created_at TIMESTAMPTZ;
+    ADD COLUMN IF NOT EXISTS feedback_created_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS difficulty TEXT,
+    ADD COLUMN IF NOT EXISTS experiment_id TEXT;
 
 CREATE INDEX IF NOT EXISTS hf_requests_created_at_idx ON hf_requests (created_at DESC);
 CREATE INDEX IF NOT EXISTS hf_requests_model_idx ON hf_requests (model);
 CREATE INDEX IF NOT EXISTS hf_requests_status_idx ON hf_requests (status);
+CREATE INDEX IF NOT EXISTS hf_requests_difficulty_idx ON hf_requests (difficulty);
+CREATE INDEX IF NOT EXISTS hf_requests_experiment_id_idx ON hf_requests (experiment_id);

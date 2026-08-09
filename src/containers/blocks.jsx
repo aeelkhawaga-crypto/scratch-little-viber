@@ -86,6 +86,7 @@ class Blocks extends React.Component {
             'handleVibeAiPromptChange',
             'handleVibeAiModelChange',
             'handleVibeAiGenerate',
+            'handleVibeAiFreshStart',
             'setVibeBlocksPreviewRef',
             'handleVibeBlocksZoomIn',
             'handleVibeBlocksZoomOut',
@@ -99,12 +100,14 @@ class Blocks extends React.Component {
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
         this.ScratchBlocks.recordSoundCallback = this.handleOpenSoundRecorder;
         this.ignoreNextWorkspaceUpdate = false;
+        this.vibeAiGenerationId = 0;
         this.vibeBlocksWorkspace = null;
         this.vibeBlocksPreviewRef = null;
         this.state = {
             prompt: null,
             vibeAiModalOpen: false,
             vibeAiXmlText: '',
+            vibeAiBaselineXml: '',
             vibeAiPrompt: 'Make the cat move 10 steos when the green flag is clicked.',
             vibeAiError: '',
             vibeAiLoading: false,
@@ -592,6 +595,7 @@ class Blocks extends React.Component {
         this.setState({
             vibeAiModalOpen: true,
             vibeAiXmlText,
+            vibeAiBaselineXml: vibeAiXmlText,
             vibeAiPrompt: '',
             vibeAiError: '',
             vibeAiLoading: false,
@@ -603,8 +607,25 @@ class Blocks extends React.Component {
         });
     }
     closeVibeAiModal() {
+        this.vibeAiGenerationId++;
         this.disposeVibeBlocksWorkspace();
         this.setState({ vibeAiModalOpen: false });
+    }
+    handleVibeAiFreshStart() {
+        this.vibeAiGenerationId++;
+        startVibeExperiment();
+        const baselineXml = this.state.vibeAiBaselineXml || this.getWorkspaceXmlText();
+        this.setState({
+            vibeAiXmlText: baselineXml,
+            vibeAiPrompt: '',
+            vibeAiError: '',
+            vibeAiLoading: false,
+            vibeAiExperimentId: null,
+            vibeAiInserted: false
+        }, () => {
+            this.initializeVibeBlocksWorkspace();
+            this.refreshVibeBlocksPreview(baselineXml);
+        });
     }
     setVibeBlocksPreviewRef(ref) {
         this.vibeBlocksPreviewRef = ref;
@@ -726,6 +747,7 @@ class Blocks extends React.Component {
         return cleaned;
     }
     async handleVibeAiGenerate() {
+        const generationId = ++this.vibeAiGenerationId;
         const prompt = (this.state.vibeAiPrompt || '').trim();
         const xmlText = this.state.vibeAiXmlText || this.getWorkspaceXmlText();
         const selectedModel = this.state.vibeAiSelectedModel;
@@ -740,15 +762,24 @@ class Blocks extends React.Component {
                 currentXml: xmlText,
                 model: selectedModel
             });
+            if (generationId !== this.vibeAiGenerationId) return;
             const cleaned = this.sanitizeAiContent(aiResponse.xml);
-            this.setState({ vibeAiXmlText: cleaned });
-            this.setState({vibeAiExperimentId: aiResponse.requestId || null});
+            this.setState({
+                vibeAiXmlText: cleaned,
+                vibeAiExperimentId: aiResponse.requestId || null
+            });
             this.initializeVibeBlocksWorkspace();
             this.refreshVibeBlocksPreview(cleaned);
         } catch (err) {
-            this.setState({ vibeAiError: err.message || 'Failed to generate code.' });
+            if (generationId !== this.vibeAiGenerationId) return;
+            this.setState({
+                vibeAiError: err.message || 'Failed to generate code.',
+                vibeAiExperimentId: err.requestId || this.state.vibeAiExperimentId
+            });
         } finally {
-            this.setState({ vibeAiLoading: false });
+            if (generationId === this.vibeAiGenerationId) {
+                this.setState({ vibeAiLoading: false });
+            }
             console.log('Vibe AI generation complete.');
         }
     }
@@ -896,8 +927,11 @@ class Blocks extends React.Component {
                     onDrop={this.handleDrop}
                     {...props}
                 />
-                {this.state.vibeAiExperimentId && this.state.vibeAiInserted && !this.state.vibeAiModalOpen ? (
-                    <VibeFeedback requestId={this.state.vibeAiExperimentId} />
+                {!this.state.vibeAiModalOpen ? (
+                    <VibeFeedback
+                        requestId={this.state.vibeAiExperimentId}
+                        model={this.state.vibeAiSelectedModel}
+                    />
                 ) : null}
                 {this.state.prompt ? (
                     <Prompt
@@ -945,6 +979,8 @@ class Blocks extends React.Component {
                         onBlocksZoomIn={this.handleVibeBlocksZoomIn}
                         onBlocksZoomOut={this.handleVibeBlocksZoomOut}
                         onBlocksFit={this.handleVibeBlocksFit}
+                        feedbackRequestId={this.state.vibeAiExperimentId}
+                        onFreshStart={this.handleVibeAiFreshStart}
                         onCancel={this.closeVibeAiModal}
                     />
                 ) : null}

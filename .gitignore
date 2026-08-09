@@ -4,10 +4,14 @@
 # Environment variables
 .env
 .env.local
+.env.*
+!.env.production.example
 
 # NPM
 /node_modules
 npm-*
+*.log
+*.pid
 
 # Testing
 /.nyc_output

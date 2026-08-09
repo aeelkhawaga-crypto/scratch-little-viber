@@ -20,8 +20,8 @@ Little Viber uses HuggingFace's Inference API to convert natural language instru
                                                      │
                                                      ▼
                                           ┌─────────────────────┐
-                                          │  Proxy Server       │
-                                          │  (localhost:3456)   │
+                                          │  API Server         │
+                                          │  (/api in prod)     │
                                           └──────────┬──────────┘
                                                      │
                                                      ▼
@@ -36,12 +36,11 @@ Little Viber uses HuggingFace's Inference API to convert natural language instru
 
 ### 1. Configuration (`src/config.js`)
 
-Contains the HuggingFace settings:
+Contains the model default and the Scratch XML system instructions. The browser does not receive the Hugging Face token.
 
 ```javascript
 const config = {
-  huggingFaceToken: process.env.HF_TOKEN || '',
-  huggingFaceModel: 'meta-llama/Llama-3.2-3B-Instruct',
+  huggingFaceModel: 'meta-llama/Llama-3.3-70B-Instruct:groq',
   systemInstruction: `...` // AI system prompt for Scratch XML generation
 };
 ```
@@ -49,8 +48,7 @@ const config = {
 **Configuration Options:**
 | Option | Description | Default |
 |--------|-------------|---------|
-| `huggingFaceToken` | Your HuggingFace API token | `''` (from env) |
-| `huggingFaceModel` | Default model to use | `meta-llama/Llama-3.2-3B-Instruct` |
+| `huggingFaceModel` | Default model to use | `meta-llama/Llama-3.3-70B-Instruct:groq` |
 | `systemInstruction` | System prompt that instructs the AI how to generate Scratch XML | See config.js |
 
 ### 2. Chat Manager (`src/lib/chatManager.js`)
@@ -73,8 +71,8 @@ reset()
 **Features:**
 - Maintains conversation history for context-aware responses
 - Supports model switching on-the-fly
-- Handles authentication via Bearer token
-- Uses local proxy server to bypass CORS restrictions
+- Calls the project API without exposing provider credentials
+- Uses `http://localhost:3456` in development and `/api` in the production build
 
 ### 3. Vibe AI Service (`src/lib/vibeAiService.js`)
 
@@ -95,15 +93,14 @@ export async function generateVibeXml({
 
 ### 4. Proxy Server (`src/lib/hf-proxy-server.js`)
 
-A local Node.js server that proxies requests to HuggingFace API to bypass browser CORS restrictions.
+A Node.js API that securely proxies requests to Hugging Face, records telemetry in PostgreSQL, and serves experiment feedback endpoints. It accepts only the six experiment models.
 
-**Endpoint:** `POST http://localhost:3456/chat`
+**Endpoint:** `POST /api/chat` in production, or `POST http://localhost:3456/chat` in development
 
 **Request Body:**
 ```json
 {
-  "token": "hf_xxx...",
-  "model": "meta-llama/Llama-3.2-3B-Instruct",
+  "model": "meta-llama/Llama-3.3-70B-Instruct:groq",
   "messages": [
     { "role": "system", "content": "..." },
     { "role": "user", "content": "..." }
@@ -113,7 +110,9 @@ A local Node.js server that proxies requests to HuggingFace API to bypass browse
 }
 ```
 
-**Response:** Proxied response from HuggingFace API
+The server reads `HF_TOKEN` from its own environment and never accepts or returns it through the browser API.
+
+**Response:** Proxied response from the Hugging Face API, with an `X-Request-ID` header that connects the run to its telemetry and feedback record.
 
 ### 5. UI Component (`src/components/vibe-ai-modal/vibe-ai-modal.jsx`)
 
@@ -130,17 +129,12 @@ The modal interface for AI code generation.
 **Available Models:**
 | Model ID | Display Name |
 |----------|--------------|
-| `meta-llama/Llama-3.2-3B-Instruct` | Llama 3.2 3B Instruct |
-| `meta-llama/Llama-3.1-8B-Instruct` | Llama 3.1 8B Instruct |
-| `meta-llama/Llama-3.1-70B-Instruct` | Llama 3.1 70B Instruct |
-| `mistralai/Mistral-7B-Instruct-v0.3` | Mistral 7B Instruct v0.3 |
-| `mistralai/Mixtral-8x7B-Instruct-v0.1` | Mixtral 8x7B Instruct |
-| `Qwen/Qwen2.5-72B-Instruct` | Qwen 2.5 72B Instruct |
-| `Qwen/Qwen2.5-Coder-32B-Instruct` | Qwen 2.5 Coder 32B |
-| `deepseek-ai/DeepSeek-R1-Distill-Qwen-32B` | DeepSeek R1 Distill 32B |
-| `microsoft/Phi-3-mini-4k-instruct` | Phi-3 Mini 4K Instruct |
-| `moonshotai/Kimi-K3:together` | Kimi K3 (Together) |
-| `deepseek-ai/DeepSeek-V4-Flash-0731:novita` | DeepSeek V4 Flash 0731 (Novita) |
+| `meta-llama/Llama-3.3-70B-Instruct:groq` | Meta — Llama 3.3 70B Instruct |
+| `Qwen/Qwen3-Next-80B-A3B-Instruct:novita` | Alibaba — Qwen3 Next 80B A3B Instruct |
+| `moonshotai/Kimi-K3:together` | Moonshot — Kimi K3 |
+| `deepseek-ai/DeepSeek-V4-Flash-0731:novita` | DeepSeek — V4 Flash 0731 |
+| `google/gemma-4-31B-it:novita` | Google — Gemma 4 31B IT |
+| `openai/gpt-oss-120b:groq` | OpenAI — GPT-OSS 120B |
 
 ## Setup Instructions
 
@@ -169,7 +163,7 @@ HF_TOKEN=hf_your_token_here
 
 ### 3. Start the Proxy Server
 
-The proxy server is required to bypass CORS restrictions:
+The API server is required for provider authentication, telemetry, and feedback:
 
 ```bash
 # In the scratch-gui directory

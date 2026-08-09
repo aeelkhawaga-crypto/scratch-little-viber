@@ -1,0 +1,12 @@
+.git
+.github
+.env
+.env.*
+!.env.production.example
+node_modules
+build
+dist
+coverage
+*.log
+*.pid
+notebooks/.ipynb_checkpoints

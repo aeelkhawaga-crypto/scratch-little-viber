@@ -27,7 +27,7 @@ If Postgres is unavailable, the proxy still serves requests and prints a warning
 
 ## Captured data
 
-Each row includes the prompt, request messages, response, model, provider (when returned), HTTP status, success/error status, total latency, provider latency, token usage, request parameters, and the raw JSON response.
+Each row includes the prompt, a stable `experiment_id`, request messages, response, model, difficulty, provider (when returned), HTTP status, success/error status, total latency, provider latency, token usage, request parameters, and the raw JSON response. Semantically equivalent prompt variants share one experiment ID so they can be aggregated during analysis.
 
 Each row is one experiment. After inserting and trying a generated result, use
 the small Feedback button in the editor to add functional correctness, intent

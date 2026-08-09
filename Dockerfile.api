@@ -1,0 +1,14 @@
+FROM node:20-alpine
+
+ENV NODE_ENV=production
+WORKDIR /app
+
+COPY deploy/api/package.json deploy/api/package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY src/lib/hf-proxy-server.js src/lib/hf-telemetry.js src/lib/experiment-catalog.js ./src/lib/
+
+USER node
+
+EXPOSE 3456
+CMD ["node", "src/lib/hf-proxy-server.js"]
