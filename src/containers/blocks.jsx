@@ -783,18 +783,20 @@ class Blocks extends React.Component {
             console.log('Vibe AI generation complete.');
         }
     }
-    handleVibeAiInsert() {
+    handleVibeAiInsert(xmlTextOverride) {
         if (!this.workspace || !this.ScratchBlocks || !this.ScratchBlocks.Xml) {
             log.warn('Workspace not ready to insert XML.');
-            return;
+            return false;
         }
-        const xmlText = this.state.vibeAiXmlText || '<xml></xml>';
+        const xmlText = typeof xmlTextOverride === 'string' ?
+            this.sanitizeAiContent(xmlTextOverride) :
+            (this.state.vibeAiXmlText || '<xml></xml>');
         let dom;
         try {
             dom = this.ScratchBlocks.Xml.textToDom(xmlText);
         } catch (e) {
             log.warn('Invalid XML, cannot insert into workspace', e);
-            return;
+            return false;
         }
         // Remove the VM listener while we reload to avoid emitting change events
         // for every inserted block, then reattach afterward.
@@ -807,10 +809,12 @@ class Blocks extends React.Component {
             this.updateToolbox();
             // Normalize and reflect the current workspace XML back into the modal.
             this.setState({ vibeAiXmlText: this.getWorkspaceXmlText(), vibeAiInserted: true });
-            this.closeVibeAiModal();
+            if (this.state.vibeAiModalOpen) this.closeVibeAiModal();
+            return true;
         } catch (e) {
             log.warn('Failed to insert XML into workspace', e);
             // this.workspace.addChangeListener(this.props.vm.blockListener);
+            return false;
         }
     }
     getWorkspaceXmlText() {
@@ -931,6 +935,7 @@ class Blocks extends React.Component {
                     <VibeFeedback
                         requestId={this.state.vibeAiExperimentId}
                         model={this.state.vibeAiSelectedModel}
+                        onInsert={this.handleVibeAiInsert}
                     />
                 ) : null}
                 {this.state.prompt ? (

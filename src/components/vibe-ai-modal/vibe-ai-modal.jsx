@@ -57,6 +57,7 @@ const VibeAiModal = ({
                         inline
                         requestId={feedbackRequestId}
                         model={selectedModel}
+                        onInsert={onInsert}
                     />
                 </div>
                 {loading ? (

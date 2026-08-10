@@ -53,7 +53,8 @@ class VibeFeedback extends React.Component {
             loadingRecords: false,
             saving: false,
             error: '',
-            saved: false
+            saved: false,
+            inserted: false
         };
     }
 
@@ -62,7 +63,8 @@ class VibeFeedback extends React.Component {
             open: true,
             model: this.props.model || this.state.model,
             error: '',
-            saved: false
+            saved: false,
+            inserted: false
         }, this.loadDataset);
     };
     close = () => this.setState({open: false});
@@ -80,7 +82,8 @@ class VibeFeedback extends React.Component {
             outcome: record.outcome || (record.status === 'success' ? 'Worked' : 'Did not work'),
             notes: record.feedback_notes || '',
             error: '',
-            saved: false
+            saved: false,
+            inserted: false
         });
     };
     loadDataset = async () => {
@@ -142,12 +145,28 @@ class VibeFeedback extends React.Component {
             this.setState({saving: false, error: error.message});
         }
     };
+    insertCode = () => {
+        const {selectedRequestId, response} = this.state;
+        if (!selectedRequestId) {
+            this.setState({error: 'Select an experiment before inserting code.', inserted: false});
+            return;
+        }
+        if (!response.trim()) {
+            this.setState({error: 'The selected experiment has no code to insert.', inserted: false});
+            return;
+        }
+        const inserted = this.props.onInsert(response);
+        this.setState({
+            error: inserted ? '' : 'Could not insert this result. Check that it contains valid Scratch XML.',
+            inserted
+        });
+    };
 
     render () {
         const {
             open, model, minutes, records, selectedRequestId, prompt, response, difficulty,
             functionalCorrectness, intentAlignment, outcome, notes, loadingRecords,
-            saving, error, saved
+            saving, error, saved, inserted
         } = this.state;
         const scores = {functional: functionalCorrectness, intent: intentAlignment};
         const modelChoices = VIBE_MODELS;
@@ -280,8 +299,16 @@ class VibeFeedback extends React.Component {
                                 />
                                 {error ? <div className={styles.error}>{error}</div> : null}
                                 {saved ? <div className={styles.saved}>Dataset changes and feedback saved.</div> : null}
+                                {inserted ? <div className={styles.saved}>Code inserted into Scratch.</div> : null}
                                 <div className={styles.actions}>
                                     <button type="button" onClick={this.close}>Close</button>
+                                    <button
+                                        type="button"
+                                        onClick={this.insertCode}
+                                        disabled={!selectedRequestId || !response.trim()}
+                                    >
+                                        Insert code into Scratch
+                                    </button>
                                     <button type="submit" disabled={saving || !selectedRequestId}>
                                         {saving ? 'Saving…' : 'Save changes & feedback'}
                                     </button>
@@ -343,13 +370,15 @@ class VibeFeedback extends React.Component {
 VibeFeedback.propTypes = {
     requestId: PropTypes.string,
     inline: PropTypes.bool,
-    model: PropTypes.string
+    model: PropTypes.string,
+    onInsert: PropTypes.func
 };
 
 VibeFeedback.defaultProps = {
     requestId: null,
     inline: false,
-    model: ''
+    model: '',
+    onInsert: () => false
 };
 
 export default VibeFeedback;
