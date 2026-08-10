@@ -43,6 +43,7 @@ class VibeFeedback extends React.Component {
             minutes: 30,
             records: [],
             selectedRequestId: '',
+            selectedExperimentId: '',
             prompt: '',
             response: '',
             difficulty: 'Easy',
@@ -74,6 +75,7 @@ class VibeFeedback extends React.Component {
     selectRecord = record => {
         this.setState({
             selectedRequestId: record.request_id,
+            selectedExperimentId: record.experiment_id || '',
             prompt: record.prompt || '',
             response: record.response || '',
             difficulty: record.difficulty || 'Easy',
@@ -100,6 +102,7 @@ class VibeFeedback extends React.Component {
             } else {
                 this.setState({
                     selectedRequestId: '',
+                    selectedExperimentId: '',
                     prompt: '',
                     response: '',
                     error: 'No experiments found for this model in that time window.'
@@ -164,12 +167,15 @@ class VibeFeedback extends React.Component {
 
     render () {
         const {
-            open, model, minutes, records, selectedRequestId, prompt, response, difficulty,
+            open, model, minutes, records, selectedRequestId, selectedExperimentId,
+            prompt, response, difficulty,
             functionalCorrectness, intentAlignment, outcome, notes, loadingRecords,
             saving, error, saved, inserted
         } = this.state;
         const scores = {functional: functionalCorrectness, intent: intentAlignment};
         const modelChoices = VIBE_MODELS;
+        const selectedRecordSummary = selectedRequestId ?
+            ` · Experiment ${selectedExperimentId || 'Uncatalogued'} · Request ${selectedRequestId}` : '';
         return (
             <React.Fragment>
                 <button
@@ -217,9 +223,9 @@ class VibeFeedback extends React.Component {
                                         {loadingRecords ? 'Loading…' : 'Load results'}
                                     </button>
                                 </div>
-                                <div className={styles.recordSummary}>
+                                <div className={styles.recordSummary} data-testid="vibeRecordSummary">
                                     {records.length} experiment{records.length === 1 ? '' : 's'} loaded
-                                    {selectedRequestId ? ` · Editing ${selectedRequestId}` : ''}
+                                    {selectedRecordSummary}
                                 </div>
                                 <label htmlFor="vibeDatasetPrompt">Prompt</label>
                                 <textarea
@@ -316,7 +322,7 @@ class VibeFeedback extends React.Component {
                             </form>
                             <aside className={styles.criteriaPanel}>
                                 <h3>Loaded experiments</h3>
-                                <div className={styles.recordList}>
+                                <div className={styles.recordList} data-testid="vibeRecordList">
                                     {records.map(record => (
                                         <button
                                             key={record.request_id}
@@ -325,7 +331,10 @@ class VibeFeedback extends React.Component {
                                                 styles.selectedRecord : ''}
                                             onClick={() => this.selectRecord(record)}
                                         >
-                                            <strong>{new Date(record.created_at).toLocaleString()}</strong>
+                                            <strong>
+                                                Experiment {record.experiment_id || 'Uncatalogued'}
+                                                {' · '}{new Date(record.created_at).toLocaleString()}
+                                            </strong>
                                             <span>
                                                 <b className={styles.difficulty}>{record.difficulty || 'Easy'}</b>
                                                 {' · '}{record.status}{record.error ? ` · ${record.error}` : ''}
